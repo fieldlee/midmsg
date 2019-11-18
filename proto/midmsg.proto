@@ -36,3 +36,7 @@ message GJ_Net_Pack {
 message GJ_Return_Pack {
     bytes       return_Msg = 1;
 }
+
+
+/// go get -u github.com/golang/protobuf/tree/master/protoc-gen-go
+/// protoc --go_out=plugins=grpc:. proto/wallet.proto
