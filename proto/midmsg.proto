@@ -4,10 +4,19 @@ syntax = "proto3";
 package proto;
 
 service MidService {
-    rpc Sync(GJ_Net_Pack)  returns (GJ_Return_Pack) {};
-    rpc Async(GJ_Net_Pack) returns (GJ_Return_Pack) {};
+    rpc Sync(NetReqInfo)  returns (NetRspInfo) {};
+    rpc Async(NetReqInfo) returns (NetRspInfo) {};
 }
 
+
+message NetReqInfo
+{
+    bytes   m_Body = 1;     ///请求rpc bytes
+}
+message NetRspInfo
+{
+    bytes   m_Resp = 1;
+}
 
 message Min_Net_MsgBody
 {
