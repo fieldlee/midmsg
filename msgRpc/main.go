@@ -31,7 +31,7 @@ func main()  {
 	rpcServer := grpc.NewServer()
 	pb.RegisterMidServiceServer(rpcServer, &handle.MsgHandle{})
 	reflection.Register(rpcServer)
-	test()
+	//test()
 	if err = rpcServer.Serve(listener); err != nil {
 		log.Fatalln("faile serve at: " + Host + ":" + Port)
 	}
@@ -47,7 +47,7 @@ func test(){
 	fmt.Println("=================")
 	t := &handle.MsgHandle{}
 	body := getbody()
-	for i:=0;i<1000 ; i++ {
+	for i:=0;i<1000000 ; i++ {
 		fmt.Println(i)
 		tbody := &pb.NetReqInfo{
 			M_Body:body,
