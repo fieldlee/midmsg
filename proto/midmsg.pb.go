@@ -102,296 +102,26 @@ func (m *NetRspInfo) GetM_Resp() []byte {
 	return nil
 }
 
-type Min_Net_MsgBody struct {
-	MLAsktype            uint64   `protobuf:"varint,1,opt,name=m_lAsktype,json=mLAsktype,proto3" json:"m_lAsktype,omitempty"`
-	MLServerSequence     uint64   `protobuf:"varint,2,opt,name=m_lServerSequence,json=mLServerSequence,proto3" json:"m_lServerSequence,omitempty"`
-	MLAskSequence        uint64   `protobuf:"varint,3,opt,name=m_lAskSequence,json=mLAskSequence,proto3" json:"m_lAskSequence,omitempty"`
-	MCMsgAckType         int32    `protobuf:"varint,4,opt,name=m_cMsgAckType,json=mCMsgAckType,proto3" json:"m_cMsgAckType,omitempty"`
-	MCMsgType            int32    `protobuf:"varint,5,opt,name=m_cMsgType,json=mCMsgType,proto3" json:"m_cMsgType,omitempty"`
-	MSSendCount          int32    `protobuf:"varint,6,opt,name=m_sSendCount,json=mSSendCount,proto3" json:"m_sSendCount,omitempty"`
-	MLExpireTime         uint32   `protobuf:"varint,7,opt,name=m_lExpireTime,json=mLExpireTime,proto3" json:"m_lExpireTime,omitempty"`
-	MISendTimeApp        uint64   `protobuf:"varint,8,opt,name=m_iSendTimeApp,json=mISendTimeApp,proto3" json:"m_iSendTimeApp,omitempty"`
-	MLResult             int32    `protobuf:"varint,9,opt,name=m_lResult,json=mLResult,proto3" json:"m_lResult,omitempty"`
-	MLBack               uint64   `protobuf:"varint,10,opt,name=m_lBack,json=mLBack,proto3" json:"m_lBack,omitempty"`
-	MIDiscard            int32    `protobuf:"varint,11,opt,name=m_iDiscard,json=mIDiscard,proto3" json:"m_iDiscard,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Min_Net_MsgBody) Reset()         { *m = Min_Net_MsgBody{} }
-func (m *Min_Net_MsgBody) String() string { return proto.CompactTextString(m) }
-func (*Min_Net_MsgBody) ProtoMessage()    {}
-func (*Min_Net_MsgBody) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7304c339219e1145, []int{2}
-}
-
-func (m *Min_Net_MsgBody) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Min_Net_MsgBody.Unmarshal(m, b)
-}
-func (m *Min_Net_MsgBody) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Min_Net_MsgBody.Marshal(b, m, deterministic)
-}
-func (m *Min_Net_MsgBody) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Min_Net_MsgBody.Merge(m, src)
-}
-func (m *Min_Net_MsgBody) XXX_Size() int {
-	return xxx_messageInfo_Min_Net_MsgBody.Size(m)
-}
-func (m *Min_Net_MsgBody) XXX_DiscardUnknown() {
-	xxx_messageInfo_Min_Net_MsgBody.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Min_Net_MsgBody proto.InternalMessageInfo
-
-func (m *Min_Net_MsgBody) GetMLAsktype() uint64 {
-	if m != nil {
-		return m.MLAsktype
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMLServerSequence() uint64 {
-	if m != nil {
-		return m.MLServerSequence
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMLAskSequence() uint64 {
-	if m != nil {
-		return m.MLAskSequence
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMCMsgAckType() int32 {
-	if m != nil {
-		return m.MCMsgAckType
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMCMsgType() int32 {
-	if m != nil {
-		return m.MCMsgType
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMSSendCount() int32 {
-	if m != nil {
-		return m.MSSendCount
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMLExpireTime() uint32 {
-	if m != nil {
-		return m.MLExpireTime
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMISendTimeApp() uint64 {
-	if m != nil {
-		return m.MISendTimeApp
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMLResult() int32 {
-	if m != nil {
-		return m.MLResult
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMLBack() uint64 {
-	if m != nil {
-		return m.MLBack
-	}
-	return 0
-}
-
-func (m *Min_Net_MsgBody) GetMIDiscard() int32 {
-	if m != nil {
-		return m.MIDiscard
-	}
-	return 0
-}
-
-type Net_Pack struct {
-	M_Msg                []byte           `protobuf:"bytes,1,opt,name=m_Msg,json=mMsg,proto3" json:"m_Msg,omitempty"`
-	M_MsgBody            *Min_Net_MsgBody `protobuf:"bytes,2,opt,name=m_MsgBody,json=mMsgBody,proto3" json:"m_MsgBody,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
-}
-
-func (m *Net_Pack) Reset()         { *m = Net_Pack{} }
-func (m *Net_Pack) String() string { return proto.CompactTextString(m) }
-func (*Net_Pack) ProtoMessage()    {}
-func (*Net_Pack) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7304c339219e1145, []int{3}
-}
-
-func (m *Net_Pack) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Net_Pack.Unmarshal(m, b)
-}
-func (m *Net_Pack) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Net_Pack.Marshal(b, m, deterministic)
-}
-func (m *Net_Pack) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Net_Pack.Merge(m, src)
-}
-func (m *Net_Pack) XXX_Size() int {
-	return xxx_messageInfo_Net_Pack.Size(m)
-}
-func (m *Net_Pack) XXX_DiscardUnknown() {
-	xxx_messageInfo_Net_Pack.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Net_Pack proto.InternalMessageInfo
-
-func (m *Net_Pack) GetM_Msg() []byte {
-	if m != nil {
-		return m.M_Msg
-	}
-	return nil
-}
-
-func (m *Net_Pack) GetM_MsgBody() *Min_Net_MsgBody {
-	if m != nil {
-		return m.M_MsgBody
-	}
-	return nil
-}
-
-type GJ_Net_Pack struct {
-	M_Net_Pack           map[uint32]*Net_Pack `protobuf:"bytes,1,rep,name=m_Net_Pack,json=mNetPack,proto3" json:"m_Net_Pack,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
-}
-
-func (m *GJ_Net_Pack) Reset()         { *m = GJ_Net_Pack{} }
-func (m *GJ_Net_Pack) String() string { return proto.CompactTextString(m) }
-func (*GJ_Net_Pack) ProtoMessage()    {}
-func (*GJ_Net_Pack) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7304c339219e1145, []int{4}
-}
-
-func (m *GJ_Net_Pack) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GJ_Net_Pack.Unmarshal(m, b)
-}
-func (m *GJ_Net_Pack) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GJ_Net_Pack.Marshal(b, m, deterministic)
-}
-func (m *GJ_Net_Pack) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GJ_Net_Pack.Merge(m, src)
-}
-func (m *GJ_Net_Pack) XXX_Size() int {
-	return xxx_messageInfo_GJ_Net_Pack.Size(m)
-}
-func (m *GJ_Net_Pack) XXX_DiscardUnknown() {
-	xxx_messageInfo_GJ_Net_Pack.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GJ_Net_Pack proto.InternalMessageInfo
-
-func (m *GJ_Net_Pack) GetM_Net_Pack() map[uint32]*Net_Pack {
-	if m != nil {
-		return m.M_Net_Pack
-	}
-	return nil
-}
-
-type GJ_Return_Pack struct {
-	Return_Msg           []byte   `protobuf:"bytes,1,opt,name=return_Msg,json=returnMsg,proto3" json:"return_Msg,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GJ_Return_Pack) Reset()         { *m = GJ_Return_Pack{} }
-func (m *GJ_Return_Pack) String() string { return proto.CompactTextString(m) }
-func (*GJ_Return_Pack) ProtoMessage()    {}
-func (*GJ_Return_Pack) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7304c339219e1145, []int{5}
-}
-
-func (m *GJ_Return_Pack) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GJ_Return_Pack.Unmarshal(m, b)
-}
-func (m *GJ_Return_Pack) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GJ_Return_Pack.Marshal(b, m, deterministic)
-}
-func (m *GJ_Return_Pack) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GJ_Return_Pack.Merge(m, src)
-}
-func (m *GJ_Return_Pack) XXX_Size() int {
-	return xxx_messageInfo_GJ_Return_Pack.Size(m)
-}
-func (m *GJ_Return_Pack) XXX_DiscardUnknown() {
-	xxx_messageInfo_GJ_Return_Pack.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GJ_Return_Pack proto.InternalMessageInfo
-
-func (m *GJ_Return_Pack) GetReturn_Msg() []byte {
-	if m != nil {
-		return m.Return_Msg
-	}
-	return nil
-}
-
 func init() {
 	proto.RegisterType((*NetReqInfo)(nil), "proto.NetReqInfo")
 	proto.RegisterType((*NetRspInfo)(nil), "proto.NetRspInfo")
-	proto.RegisterType((*Min_Net_MsgBody)(nil), "proto.Min_Net_MsgBody")
-	proto.RegisterType((*Net_Pack)(nil), "proto.Net_Pack")
-	proto.RegisterType((*GJ_Net_Pack)(nil), "proto.GJ_Net_Pack")
-	proto.RegisterMapType((map[uint32]*Net_Pack)(nil), "proto.GJ_Net_Pack.MNetPackEntry")
-	proto.RegisterType((*GJ_Return_Pack)(nil), "proto.GJ_Return_Pack")
 }
 
 func init() { proto.RegisterFile("proto/midmsg.proto", fileDescriptor_7304c339219e1145) }
 
 var fileDescriptor_7304c339219e1145 = []byte{
-	// 503 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x93, 0xdd, 0x6a, 0xdb, 0x30,
-	0x14, 0xc7, 0xe7, 0x26, 0x4e, 0x93, 0x93, 0xa4, 0x1f, 0x1a, 0xdb, 0x4c, 0x47, 0x21, 0x73, 0x29,
-	0x04, 0x06, 0x09, 0xa4, 0x37, 0x63, 0x17, 0x83, 0xb4, 0x2b, 0x25, 0xc5, 0x0e, 0x43, 0xc9, 0xbd,
-	0xc8, 0x6c, 0xcd, 0x98, 0xf8, 0xd8, 0xae, 0x65, 0x97, 0xe5, 0x1d, 0xf6, 0x06, 0x7b, 0xd9, 0xa1,
-	0x8f, 0xd8, 0xe9, 0xee, 0x7a, 0x65, 0xfd, 0xff, 0xfa, 0x9d, 0x0f, 0xf9, 0x48, 0x40, 0xf2, 0x22,
-	0x2b, 0xb3, 0x29, 0xc6, 0x21, 0x8a, 0x68, 0xa2, 0x04, 0xb1, 0xd5, 0xc7, 0xbd, 0x02, 0x58, 0xf2,
-	0x92, 0xf2, 0xa7, 0x45, 0xfa, 0x2b, 0x23, 0xef, 0xa0, 0x83, 0xec, 0x36, 0x0b, 0x77, 0x8e, 0x35,
-	0xb2, 0xc6, 0x03, 0x6a, 0xa3, 0x14, 0x7b, 0x48, 0xe4, 0x0d, 0x44, 0xb9, 0xc8, 0x6b, 0x48, 0x0a,
-	0xf7, 0x4f, 0x0b, 0x4e, 0xfd, 0x38, 0x65, 0x4b, 0x5e, 0x32, 0x5f, 0x44, 0x32, 0x90, 0x5c, 0x02,
-	0x20, 0x4b, 0xe6, 0x62, 0x5b, 0xee, 0x72, 0xae, 0xf0, 0x36, 0xed, 0xa1, 0x67, 0x0c, 0xf2, 0x19,
-	0xce, 0x91, 0x25, 0x2b, 0x5e, 0x3c, 0xf3, 0x62, 0xc5, 0x9f, 0x2a, 0x9e, 0x06, 0xdc, 0x39, 0x52,
-	0xd4, 0x19, 0x7a, 0x2f, 0x7d, 0x72, 0x0d, 0x27, 0x3a, 0x57, 0x4d, 0xb6, 0x14, 0x39, 0x54, 0xf9,
-	0x6a, 0xec, 0x0a, 0x86, 0xc8, 0x02, 0x5f, 0x44, 0xf3, 0x60, 0xbb, 0x96, 0x55, 0xdb, 0x23, 0x6b,
-	0x6c, 0xd3, 0x01, 0xde, 0x35, 0x9e, 0xee, 0x4b, 0x42, 0x8a, 0xb0, 0x15, 0xd1, 0x53, 0x84, 0xda,
-	0xfe, 0x04, 0x03, 0x64, 0x62, 0xc5, 0xd3, 0xf0, 0x2e, 0xab, 0xd2, 0xd2, 0xe9, 0x28, 0xa0, 0x8f,
-	0xab, 0xda, 0xd2, 0x65, 0x92, 0xfb, 0xdf, 0x79, 0x5c, 0xf0, 0x75, 0x8c, 0xdc, 0x39, 0x1e, 0x59,
-	0xe3, 0x21, 0x1d, 0xa0, 0xd7, 0x78, 0xba, 0xe5, 0x58, 0x06, 0x49, 0x39, 0xcf, 0x73, 0xa7, 0x6b,
-	0x5a, 0x5e, 0x1c, 0x98, 0xe4, 0x23, 0xf4, 0x90, 0x25, 0x94, 0x8b, 0x2a, 0x29, 0x9d, 0x9e, 0xaa,
-	0xd5, 0x45, 0x4f, 0x6b, 0xf2, 0x01, 0x8e, 0x91, 0x25, 0xb7, 0x9b, 0x60, 0xeb, 0x80, 0x0a, 0xee,
-	0xa0, 0x27, 0x95, 0x3e, 0x43, 0xfc, 0x3d, 0x16, 0xc1, 0xa6, 0x08, 0x9d, 0xbe, 0x39, 0xc3, 0xc2,
-	0x18, 0xee, 0x1a, 0xba, 0x72, 0x12, 0x3f, 0x24, 0xfa, 0x16, 0x6c, 0x94, 0x33, 0x31, 0x03, 0x6b,
-	0xa3, 0x2f, 0x22, 0x72, 0x23, 0xab, 0x9a, 0x41, 0xa9, 0x9f, 0xde, 0x9f, 0xbd, 0xd7, 0x77, 0x63,
-	0xf2, 0xdf, 0x18, 0x69, 0x17, 0xcd, 0xca, 0xfd, 0x6b, 0x41, 0xff, 0xe1, 0x91, 0xd5, 0x99, 0xbf,
-	0xc9, 0x26, 0xf6, 0xca, 0xb1, 0x46, 0xad, 0x71, 0x7f, 0x36, 0x32, 0x59, 0x0e, 0xb8, 0x89, 0xbf,
-	0xe4, 0xa5, 0x5c, 0xdc, 0xa7, 0x65, 0x21, 0xf3, 0x19, 0x79, 0xe1, 0xc1, 0xf0, 0xc5, 0x16, 0x39,
-	0x83, 0xd6, 0x96, 0xeb, 0xeb, 0x37, 0xa4, 0x72, 0x49, 0xae, 0xc1, 0x7e, 0xde, 0x24, 0x15, 0x37,
-	0x3d, 0x9e, 0x9a, 0xec, 0xfb, 0xd4, 0x54, 0xef, 0x7e, 0x3d, 0xfa, 0x62, 0xb9, 0x53, 0x38, 0x79,
-	0x78, 0x64, 0x94, 0x97, 0x55, 0x91, 0xea, 0xfe, 0x2e, 0x01, 0x0a, 0x2d, 0x9b, 0xe3, 0xf7, 0xb4,
-	0xe3, 0x8b, 0x68, 0x86, 0x00, 0x7e, 0x1c, 0xca, 0x8b, 0x16, 0x07, 0x9c, 0x4c, 0xa0, 0xbd, 0xda,
-	0xa5, 0x01, 0x39, 0x6f, 0x4a, 0x98, 0x87, 0x71, 0x71, 0x68, 0xe9, 0x67, 0xe0, 0xbe, 0x21, 0x53,
-	0xb0, 0xe7, 0xe2, 0x15, 0x01, 0x3f, 0x3b, 0xca, 0xbb, 0xf9, 0x17, 0x00, 0x00, 0xff, 0xff, 0x25,
-	0x96, 0xe1, 0x8f, 0x90, 0x03, 0x00, 0x00,
+	// 161 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2a, 0x28, 0xca, 0x2f,
+	0xc9, 0xd7, 0xcf, 0xcd, 0x4c, 0xc9, 0x2d, 0x4e, 0xd7, 0x03, 0x73, 0x84, 0x58, 0xc1, 0x94, 0x92,
+	0x32, 0x17, 0x97, 0x5f, 0x6a, 0x49, 0x50, 0x6a, 0xa1, 0x67, 0x5e, 0x5a, 0xbe, 0x90, 0x28, 0x17,
+	0x5b, 0x6e, 0xbc, 0x53, 0x7e, 0x4a, 0xa5, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x4f, 0x10, 0x6b, 0x2e,
+	0x88, 0x03, 0x53, 0x54, 0x5c, 0x80, 0x50, 0x14, 0x94, 0x5a, 0x5c, 0x00, 0x57, 0x04, 0xe2, 0x18,
+	0xe5, 0x72, 0x71, 0xf9, 0x66, 0xa6, 0x04, 0xa7, 0x16, 0x95, 0x65, 0x26, 0xa7, 0x0a, 0xe9, 0x71,
+	0xb1, 0x04, 0x57, 0xe6, 0x25, 0x0b, 0x09, 0x42, 0xac, 0xd3, 0x43, 0x58, 0x22, 0x85, 0x2c, 0x04,
+	0x31, 0x52, 0x89, 0x41, 0x48, 0x9f, 0x8b, 0xd5, 0xb1, 0x98, 0x04, 0x0d, 0x46, 0xf6, 0x5c, 0xbc,
+	0xce, 0x39, 0x99, 0xa9, 0x79, 0x25, 0x48, 0x36, 0x3a, 0x27, 0xe6, 0xe4, 0x10, 0x6b, 0x40, 0x12,
+	0x1b, 0x58, 0xcc, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0x36, 0xb5, 0x1a, 0xc6, 0x1d, 0x01, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -504,6 +234,78 @@ var _MidService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Async",
 			Handler:    _MidService_Async_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/midmsg.proto",
+}
+
+// ClientServiceClient is the client API for ClientService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type ClientServiceClient interface {
+	Call(ctx context.Context, in *NetReqInfo, opts ...grpc.CallOption) (*NetRspInfo, error)
+}
+
+type clientServiceClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewClientServiceClient(cc *grpc.ClientConn) ClientServiceClient {
+	return &clientServiceClient{cc}
+}
+
+func (c *clientServiceClient) Call(ctx context.Context, in *NetReqInfo, opts ...grpc.CallOption) (*NetRspInfo, error) {
+	out := new(NetRspInfo)
+	err := c.cc.Invoke(ctx, "/proto.ClientService/Call", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ClientServiceServer is the server API for ClientService service.
+type ClientServiceServer interface {
+	Call(context.Context, *NetReqInfo) (*NetRspInfo, error)
+}
+
+// UnimplementedClientServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedClientServiceServer struct {
+}
+
+func (*UnimplementedClientServiceServer) Call(ctx context.Context, req *NetReqInfo) (*NetRspInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Call not implemented")
+}
+
+func RegisterClientServiceServer(s *grpc.Server, srv ClientServiceServer) {
+	s.RegisterService(&_ClientService_serviceDesc, srv)
+}
+
+func _ClientService_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NetReqInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClientServiceServer).Call(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.ClientService/Call",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClientServiceServer).Call(ctx, req.(*NetReqInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _ClientService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.ClientService",
+	HandlerType: (*ClientServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Call",
+			Handler:    _ClientService_Call_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

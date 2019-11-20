@@ -1,12 +1,13 @@
 package main
 
 import (
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
-	"net"
-	"midmsg/utils"
-	"google.golang.org/grpc"
+	"midmsg/handle"
 	pb "midmsg/proto"
+	"midmsg/utils"
+	"net"
 )
 
 var (
@@ -22,7 +23,7 @@ func main()  {
 		log.Println("Demo server is listening at: " + Host + ":" + Port)
 	}
 	rpcServer := grpc.NewServer()
-	pb.RegisterMidServiceServer(rpcServer, &FormatData{})
+	pb.RegisterMidServiceServer(rpcServer, &handle.MsgHandle{})
 	reflection.Register(rpcServer)
 	if err = rpcServer.Serve(listener); err != nil {
 		log.Fatalln("faile serve at: " + Host + ":" + Port)

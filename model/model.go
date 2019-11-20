@@ -1,5 +1,6 @@
 package model
 
+import "github.com/micro/go-micro/errors"
 
 type Min_Net_MsgBody struct {
 	m_lAsktype  		uint64 		//请求的服务类型
@@ -25,10 +26,20 @@ type GJ_Net_Pack struct{
 }
 
 var (
-    GJ_PUBLIC_START        		=   0								//公共部分的请求
+	ErrHeaderLength = errors.New("errheaderlength","the header length error",40001)
+	ErrClientType = errors.New("errclienttype","the client type error",40002)
+	ErrCompressionType = errors.New("errcompressiontype","the compression type error",40003)
+	ErrEncrptyType = errors.New("errencryptiontype","the encryption type error",40004)
+	ErrCompressedLength = errors.New("errcompressedlength","the compressed length error",40005)
+	ErrUNCompressedLength = errors.New("erruncompressedlength","the uncompressed length error",40006)
+	ErrCompresseduncompressedLength = errors.New("errcompresseduncompressedlength","the compressed length more the uncompressed length error",40007)
+)
+
+var (
+    GJ_PUBLIC_START        		=   0							//公共部分的请求
     GJ_PUBLIC_NET_OPERATION		=   GJ_PUBLIC_START+10000		//操作部分
-    ETN_ASK_LOAIN_SERVER     	=	GJ_PUBLIC_NET_OPERATION+1 // 登录
-    ETN_SERVER_NET_CONNET    	=	GJ_PUBLIC_NET_OPERATION+2 //有客户端连接成功
+    ETN_ASK_LOAIN_SERVER     	=	GJ_PUBLIC_NET_OPERATION+1 	// 登录
+    ETN_SERVER_NET_CONNET    	=	GJ_PUBLIC_NET_OPERATION+2 	//有客户端连接成功
     ETN_SERVER_NET_CLOSE     	=	GJ_PUBLIC_NET_OPERATION+3	//服务端网络层关闭
     ETN_ASK_USER_LEAVE       	=	GJ_PUBLIC_NET_OPERATION+4	//用户登录退出
     ETN_SERVER_PUSH_NOTICE_MSG  =   GJ_PUBLIC_NET_OPERATION+5	//服务器推送通知
@@ -52,37 +63,37 @@ var (
 	MSG_TYPE_SUBSCRIBE_ACK		MSG_TYPE	= 11			//订阅消息响应
 	MSG_TYPE_ERROR				MSG_TYPE	= 12			//错误信息应答
 	MSG_TYPE_NOTICE             MSG_TYPE    = 13			//通知消息
-	// MSG_TYPEMAX,										//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
-	MSG_TYPE_CONNECT_COUNT_MSG	MSG_TYPE	= 0xFFFF			//查询连接数
+	MSG_TYPEMAX					MSG_TYPE    = 14			//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
+	MSG_TYPE_CONNECT_COUNT_MSG	MSG_TYPE	= 0xFFFF		//查询连接数
 )
 
-type CLIENT_TYPE int32
+type CLIENT_TYPE int16
 var (
 	Window_pc				CLIENT_TYPE		= 0				//请求来自PC
 	IOS_mobile				CLIENT_TYPE		= 1				//请求来自苹果手机
 	Android_mobilewindow_pc	CLIENT_TYPE		= 3				//请求来自安卓手机
 	Web_side				CLIENT_TYPE		= 4				//请求来自WEB端
-	//ClientTypeMax									//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
+	ClientTypeMax			CLIENT_TYPE		= 5				//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
-type COMPRESS_TYPE int32
+type COMPRESS_TYPE int16
 var (
 	Compression_no			COMPRESS_TYPE		= 0				//表示数据未压缩
 	Compression_zip			COMPRESS_TYPE		= 1				//表示数据被压缩zlib压缩格式
-	//CompressionWayMax								//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
+	CompressionWayMax		COMPRESS_TYPE		= 2				//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
 
-type ENCRPTION_TYPE int32
+type ENCRPTION_TYPE int16
 var (
 	Encryption_No			ENCRPTION_TYPE		= 0				//请求数据流未被加密
 	Encryption_Des			ENCRPTION_TYPE		= 1				//请求数据是通过Des算法加密
 	Encryption_AES			ENCRPTION_TYPE		= 2				//请求数据是通过AES算法加密
 	Encryption_RSA			ENCRPTION_TYPE		= 3				//请求数据是通过RSA算法加密
-	//Encryption_Max									//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
+	Encryption_Max			ENCRPTION_TYPE		= 4				//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
 
-type DATAFORMAT_TYPE int32
+type DATAFORMAT_TYPE int16
 
 var (
 	DataFormat_Probufo		DATAFORMAT_TYPE		= 0			//数据是通过protobuf进行格式化
-	//DataFormatMax								//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
+	DataFormatMax			DATAFORMAT_TYPE		= 1			//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
