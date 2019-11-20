@@ -97,3 +97,9 @@ var (
 	DataFormat_Probufo		DATAFORMAT_TYPE		= 0			//数据是通过protobuf进行格式化
 	DataFormatMax			DATAFORMAT_TYPE		= 1			//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
+
+type CALL_CLIENT_TYPE uint8
+var (
+	CALL_CLIENT_SYNC 	CALL_CLIENT_TYPE = 0
+	CALL_CLIENT_ASYNC   CALL_CLIENT_TYPE = 1
+)

@@ -1,5 +1,7 @@
 package handle
 
+import "midmsg/model"
+
 func NewWorker(workerPool chan chan HandleBody) Worker {
 	return Worker{
 		WorkerPool: workerPool,
@@ -20,7 +22,14 @@ func (w Worker) Start() {
 				if err != nil {
 					body.Err <- err
 				}
+				/////同步
+				if body.Type == model.CALL_CLIENT_SYNC {
 
+				}
+				/////异步
+				if body.Type == model.CALL_CLIENT_ASYNC {
+
+				}
 
 			case <-w.quit:
 				// we have received a signal to stop

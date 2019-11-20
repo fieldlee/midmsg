@@ -1,11 +1,13 @@
 package handle
 
 import (
+	"midmsg/model"
 	pb "midmsg/proto"
 )
 
 type HandleBody struct {
 	M_Body []byte
+	Type   model.CALL_CLIENT_TYPE
 	Out    chan *pb.NetRspInfo
 	Err    chan error
 }
@@ -22,7 +24,6 @@ type Worker struct {
 }
 // A buffered channel that we can send work requests on.
 var JobQueue chan HandleBody
-
 
 func NewDispatcher(maxWorkers uint32) *Dispatcher {
 	pool := make(chan chan HandleBody, maxWorkers)
