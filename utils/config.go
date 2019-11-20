@@ -66,7 +66,6 @@ func GetServices()map[string]interface{}{
 
 func GetServiceByKey(key string)map[string]interface{}{
 	for k , v := range Services{
-
 		if k == key {
 			if reflect.TypeOf(v).Kind() == reflect.Map {
 				return v.(map[string]interface{})

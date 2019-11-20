@@ -5,10 +5,32 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	pb "midmsg/proto"
+	"sync"
 	"time"
 )
 
-func CallClient(address,port string,timeout time.Duration,msg []byte)([]byte,error){
+var TimeoutRequest sync.Pool
+
+type ToutRequest struct{
+	Address string
+	Port 	string
+	Timeout time.Duration
+	Service string
+	InBody  []byte
+}
+
+
+func init()  {
+	TimeoutRequest = sync.Pool{
+		New: func() interface{} {
+			b := ToutRequest{}
+			return &b
+		},
+	}
+}
+
+
+func CallClient(address,port string,timeout *time.Duration,service string,msg []byte)([]byte,error){
 
 	caddr := fmt.Sprintf("%v:%v",address,port)
 
@@ -21,8 +43,8 @@ func CallClient(address,port string,timeout time.Duration,msg []byte)([]byte,err
 	c := pb.NewClientServiceClient(conn)
 	var ctx context.Context
 	var cancel context.CancelFunc
-	if timeout > time.Second {
-		ctx, cancel = context.WithTimeout(context.Background(), timeout)
+	if timeout != nil {
+		ctx, cancel = context.WithTimeout(context.Background(), *timeout)
 		defer cancel()
 	}else{
 		ctx = context.Background()
@@ -32,7 +54,15 @@ func CallClient(address,port string,timeout time.Duration,msg []byte)([]byte,err
 
 	if err != nil {
 		return nil,err
+	}else{
+		return r.M_Resp,nil
 	}
+	////////////////////超时处理
+	select {
+	case <-ctx.Done():
+		fmt.Println(ctx.Err()) // 超时处理
+		PutPoolRequest(address,port,timeout,service,msg)
+	}
+	return nil,nil
 
-	return r.M_Resp,nil
 }

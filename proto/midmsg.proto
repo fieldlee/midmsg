@@ -21,5 +21,10 @@ message NetRspInfo
     bytes   m_Resp = 1;
 }
 
+message ClientRsqInfo {
+    bytes   m_Resp = 1;
+    uint32  m_Type = 2;
+    string  m_RqId = 3;
+}
 /// go get -u github.com/golang/protobuf/tree/master/protoc-gen-go
 /// protoc --go_out=plugins=grpc:. proto/wallet.proto
