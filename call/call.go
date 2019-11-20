@@ -1,11 +1,11 @@
 package call
 
 import (
+	"context"
 	"fmt"
 	"google.golang.org/grpc"
-	"context"
-	"time"
 	pb "midmsg/proto"
+	"time"
 )
 
 func CallClient(address,port string,timeout time.Duration,msg []byte)([]byte,error){
