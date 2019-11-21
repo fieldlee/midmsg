@@ -1,10 +1,9 @@
 package handle
 
 import (
-
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/gogo/protobuf/proto"
 	"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
@@ -85,34 +84,34 @@ func AnzalyBodyHead(inbody []byte) error {
 	clientType := utils.BytesToInt16(m_sClientType)
 	fmt.Println("clientType:",clientType)
 	/////check client type
-	if clientType >= int16(model.ClientTypeMax) {
-		return model.ErrClientType
-	}
+	//if clientType >= int16(model.ClientTypeMax) {
+	//	return model.ErrClientType
+	//}
 	//包头长度   2
 	m_sHeadLength := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	headLength := utils.BytesToInt16(m_sHeadLength)
 	fmt.Println("headLength:",headLength)
 	////check head length
-	if headLength != 32 {
-		return model.ErrHeaderLength
-	}
+	//if headLength != 32 {
+	//	return model.ErrHeaderLength
+	//}
 	//压缩方式   1
 	m_cCompressionWay := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	compressionWay := utils.BytesToUInt8(m_cCompressionWay)
 	fmt.Println("compressionWay:",compressionWay)
-	if compressionWay >= uint8(model.CompressionWayMax) {
-		return model.ErrCompressionType
-	}
+	//if compressionWay >= uint8(model.CompressionWayMax) {
+	//	return model.ErrCompressionType
+	//}
 	//加密方式   1
 	m_cEncryption := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	encryption := utils.BytesToUInt8(m_cEncryption)
 	fmt.Println("encryption:",encryption)
-	if encryption >= uint8(model.Encryption_Max) {
-		return model.ErrEncrptyType
-	}
+	//if encryption >= uint8(model.Encryption_Max) {
+	//	return model.ErrEncrptyType
+	//}
 	//协议标识   1
 	m_cSig := bodyHead[:1]
 	bodyHead = bodyHead[1:]
@@ -138,9 +137,9 @@ func AnzalyBodyHead(inbody []byte) error {
 	bufSize := utils.BytesToInt32(m_lBufSize)
 	fmt.Println("bufSize:",bufSize)
 	///// 校验数据长度
-	if int32(len(inbody)-32) != bufSize {
-		return model.ErrCompressedLength
-	}
+	//if int32(len(inbody)-32) != bufSize {
+	//	return model.ErrCompressedLength
+	//}
 
 	//压缩前长度 4
 	m_lUncompressedSize := bodyHead[:4]
@@ -165,11 +164,18 @@ func AnzalyBodyHead(inbody []byte) error {
 	return nil
 }
 
-func AnzalyBody(inbody []byte) (*model.GJ_Net_Pack,error) {
-	body := inbody[31:]
-	netPack := model.GJ_Net_Pack{}
-	//netPack := make(map[interface{}]interface{})
-	err := json.Unmarshal(body,&netPack)
+func AnzalyBody(inbody []byte) (*pb.GJ_Net_Pack,error) {
+
+	body := inbody[32:]
+
+	//var ptestStruct = *(**model.GJ_Net_Pack)(unsafe.Pointer(&body))
+	//fmt.Println("ptestStruct.data is : ", ptestStruct)
+
+
+	//netPack := model.GJ_Net_Pack{}
+	netPack := pb.GJ_Net_Pack{}
+	err :=  proto.Unmarshal(body,&netPack)
+	//err := json.Unmarshal(body,&netPack)
 	if err != nil {
 		return nil,err
 	}

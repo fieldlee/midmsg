@@ -26,5 +26,32 @@ message ClientRsqInfo {
     uint32  m_Type = 2;
     string  m_RqId = 3;
 }
+
+message GJ_Net_Pack
+{
+    message Net_Pack
+    {
+        bytes							m_Msg = 1;							//每个服务类型定义的protobuf结构，打包成流缓存在该字段
+        message Min_Net_MsgBody
+        {
+            uint64					m_lAsktype 			= 1;					//请求的服务类型
+            uint64					m_lServerSequence		= 2;					//服务端响应序列号
+            uint64					m_lAskSequence			= 3;					//客户端请求序列号
+            int32					m_cMsgAckType			= 4;					//0 无需回复, 1 回复到发送方, 2 回复到离线服务器
+            int32					m_cMsgType			= 5;					//消息类型
+            int32					m_sSendCount			= 6;					//同一请求，请求服务端的次数
+            uint32					m_lExpireTime			= 7;					//过期时间，0表示永不过期
+            uint64					m_iSendTimeApp			= 8;					//请求发送的时间，单位秒
+            int32					m_lResult			= 9;					//0: SUCCESS  !0:FAILURE
+            uint64					m_lBack				= 10;					//备份数据，默认为0
+            int32					m_iDiscard			= 11;					//消息是否可以丢弃 0 表示可以丢弃 1表示不可以
+        }
+        Min_Net_MsgBody					m_MsgBody = 2;
+    }
+    map<uint32, Net_Pack> 					m_Net_Pack = 1;								//可缓存多个客户端请求
+}
+
+
+
 /// go get -u github.com/golang/protobuf/tree/master/protoc-gen-go
 /// protoc --go_out=plugins=grpc:. proto/wallet.proto

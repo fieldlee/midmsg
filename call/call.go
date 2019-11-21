@@ -5,32 +5,11 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	pb "midmsg/proto"
-	"sync"
 	"time"
 )
 
-var TimeoutRequest sync.Pool
 
-type ToutRequest struct{
-	Address string
-	Port 	string
-	Timeout time.Duration
-	Service string
-	InBody  []byte
-}
-
-
-func init()  {
-	TimeoutRequest = sync.Pool{
-		New: func() interface{} {
-			b := ToutRequest{}
-			return &b
-		},
-	}
-}
-
-
-func CallClient(address,port string,timeout *time.Duration,service string,msg []byte)([]byte,error){
+func CallClient(address,port string,timeout time.Duration,service string,msg []byte)([]byte,error){
 
 	caddr := fmt.Sprintf("%v:%v",address,port)
 
@@ -43,8 +22,8 @@ func CallClient(address,port string,timeout *time.Duration,service string,msg []
 	c := pb.NewClientServiceClient(conn)
 	var ctx context.Context
 	var cancel context.CancelFunc
-	if timeout != nil {
-		ctx, cancel = context.WithTimeout(context.Background(), *timeout)
+	if timeout > time.Second *0 {
+		ctx, cancel = context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 	}else{
 		ctx = context.Background()

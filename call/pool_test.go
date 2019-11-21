@@ -2,11 +2,16 @@ package call
 
 import (
 	"testing"
-	"time"
 )
 
 func TestTimerCallPool(t *testing.T) {
-	go TimerCallPool()
 
-	time.Sleep(time.Second * 1000)
+}
+
+func TestTestOtRequestPut(t *testing.T) {
+	TestOtRequestPut()
+}
+
+func TestTestOtRequestGet(t *testing.T) {
+	TestOtRequestGet()
 }
