@@ -28,7 +28,7 @@ func (w Worker) Start() {
 				}
 				/////异步
 				if body.Type == model.CALL_CLIENT_ASYNC {
-
+					body.Err <- nil
 				}
 
 			case <-w.quit:

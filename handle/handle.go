@@ -53,11 +53,13 @@ func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo
 
 	JobQueue <- handleBody
 
+	// 异步处理只处理错误信息
 	for {
 		select {
-		case netrep := <-out:
-			return netrep,nil
 		case errinfo := <-err:
+			if errinfo == nil {
+				return nil,nil
+			}
 			return nil,errinfo
 		}
 	}

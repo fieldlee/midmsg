@@ -3,9 +3,13 @@ package utils
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/des"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"midmsg/model"
 	"runtime"
 	"strconv"
 	"strings"
@@ -59,12 +63,6 @@ func BytesToInt32(b []byte) int32 {
 	return int32(x)
 }
 
-func UInt16ToBytes(i uint16) []byte {
-	var buf = make([]byte, 2)
-	binary.BigEndian.PutUint16(buf, i)
-	return buf
-}
-
 func UnzipBytes(zip []byte)[]byte{
 	var b bytes.Buffer
 	w := gzip.NewWriter(&b)
@@ -97,4 +95,83 @@ func Goid() int {
 		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
 	}
 	return id
+}
+
+func Decrypt(b []byte,encrptType model.ENCRPTION_TYPE)[]byte{
+	if encrptType == model.Encryption_AES{
+
+	}
+	if encrptType == model.Encryption_Des{
+
+	}
+	if encrptType == model.Encryption_RSA{
+
+	}
+	return b
+}
+
+func AesDecrypt(crypted, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	blockSize := block.BlockSize()
+	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
+	origData := make([]byte, len(crypted))
+	blockMode.CryptBlocks(origData, crypted)
+	origData = PKCS5UnPadding(origData)
+	return origData, nil
+}
+
+func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(ciphertext, padtext...)
+}
+
+func PKCS5UnPadding(origData []byte) []byte {
+	length := len(origData)
+	unpadding := int(origData[length-1])
+	return origData[:(length - unpadding)]
+}
+
+func AesEncrypt(origData, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	blockSize := block.BlockSize()
+	origData = PKCS5Padding(origData, blockSize)
+	blockMode := cipher.NewCBCEncrypter(block, key[:blockSize])
+	crypted := make([]byte, len(origData))
+	blockMode.CryptBlocks(crypted, origData)
+	return crypted, nil
+}
+
+func padding(src []byte,blocksize int) []byte {
+	padnum:=blocksize-len(src)%blocksize
+	pad:=bytes.Repeat([]byte{byte(padnum)},padnum)
+	return append(src,pad...)
+}
+
+func unpadding(src []byte) []byte {
+	n:=len(src)
+	unpadnum:=int(src[n-1])
+	return src[:n-unpadnum]
+}
+
+func Encrypt3DES(src []byte,key []byte) []byte {
+	block,_:=des.NewTripleDESCipher(key)
+	src=padding(src,block.BlockSize())
+	blockmode:=cipher.NewCBCEncrypter(block,key[:block.BlockSize()])
+	blockmode.CryptBlocks(src,src)
+	return src
+}
+
+func Decrypt3DES(src []byte,key []byte) []byte {
+	block,_:=des.NewTripleDESCipher(key)
+	blockmode:=cipher.NewCBCDecrypter(block,key[:block.BlockSize()])
+	blockmode.CryptBlocks(src,src)
+	src=unpadding(src)
+	return src
 }

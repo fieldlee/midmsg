@@ -35,8 +35,6 @@ func main()  {
 	if err = rpcServer.Serve(listener); err != nil {
 		log.Fatalln("faile serve at: " + Host + ":" + Port)
 	}
-
-
 }
 
 func test(){
