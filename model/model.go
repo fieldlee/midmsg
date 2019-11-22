@@ -1,6 +1,10 @@
 package model
 
-import "github.com/micro/go-micro/errors"
+import (
+	"github.com/micro/go-micro/errors"
+	"time"
+	pb "midmsg/proto"
+)
 
 type Min_Net_MsgBody struct {
 	m_lAsktype  		uint64 		//请求的服务类型
@@ -25,6 +29,44 @@ type GJ_Net_Pack struct{
 	m_Net_Pack	map[uint32]Net_Pack		//可缓存多个客户端请求
 }
 
+type SendResultInfo struct {
+	Key 			uint32
+	SendCount 		int32
+	SuccessCount 	int32
+	FailCount 		int32
+	DiscardCount 	int32
+	ReSendCount		int32
+	ResultList      []SingleResultInfo
+	CheckErr        error
+}
+
+type SingleResultInfo struct {
+	AskSequence 	uint64
+	SendTimeApp 	uint64
+	MsgType 		int32
+	MsgAckType 		int32
+	SyncType 		uint8     ///// 0 同步  1 异步
+	IsTimeOut		bool
+	IsDisCard       bool
+	IsResend		bool
+	Errinfo 		error
+	Result 			*pb.NetRspInfo
+}
+
+type CallInfo struct {
+	AskSequence 	uint64
+	SendTimeApp 	uint64
+	MsgType 		int32
+	MsgAckType 		int32
+	IsDiscard       bool
+	SyncType 		uint8
+	Address 		string
+	Port 			string
+	Service 		string
+	Timeout 		time.Duration
+	MsgBody 		[]byte
+}
+
 var (
 	ErrHeaderLength = errors.New("errheaderlength","the header length error",40001)
 	ErrClientType = errors.New("errclienttype","the client type error",40002)
@@ -33,18 +75,22 @@ var (
 	ErrCompressedLength = errors.New("errcompressedlength","the compressed length error",40005)
 	ErrUNCompressedLength = errors.New("erruncompressedlength","the uncompressed length error",40006)
 	ErrCompresseduncompressedLength = errors.New("errcompresseduncompressedlength","the compressed length more the uncompressed length error",40007)
+	ErrAskType = errors.New("errasktype","the ask type error",40008)
+	ErrMsgType = errors.New("errmsgtype","the message type error",40009)
+	ErrSendCount = errors.New("errsendcount","the send count must more than zero",40010)
 )
 
+type ASK_TYPE int32
 var (
-    GJ_PUBLIC_START        		=   0							//公共部分的请求
-    GJ_PUBLIC_NET_OPERATION		=   GJ_PUBLIC_START+10000		//操作部分
-    ETN_ASK_LOAIN_SERVER     	=	GJ_PUBLIC_NET_OPERATION+1 	// 登录
-    ETN_SERVER_NET_CONNET    	=	GJ_PUBLIC_NET_OPERATION+2 	//有客户端连接成功
-    ETN_SERVER_NET_CLOSE     	=	GJ_PUBLIC_NET_OPERATION+3	//服务端网络层关闭
-    ETN_ASK_USER_LEAVE       	=	GJ_PUBLIC_NET_OPERATION+4	//用户登录退出
-    ETN_SERVER_PUSH_NOTICE_MSG  =   GJ_PUBLIC_NET_OPERATION+5	//服务器推送通知
-    ETN_HEARTBEAT_PACK          =   GJ_PUBLIC_NET_OPERATION+6	//心跳包
-    ETN_SERVER_SUBSRCTIBE_MSG   =   GJ_PUBLIC_NET_OPERATION+7	//广播消息
+    GJ_PUBLIC_START        		ASK_TYPE 	=   0							//公共部分的请求
+    GJ_PUBLIC_NET_OPERATION		ASK_TYPE 	=   GJ_PUBLIC_START+10000		//操作部分
+    ETN_ASK_LOAIN_SERVER     	ASK_TYPE 	=	GJ_PUBLIC_NET_OPERATION+1 	// 登录
+    ETN_SERVER_NET_CONNET    	ASK_TYPE 	=	GJ_PUBLIC_NET_OPERATION+2 	//有客户端连接成功
+    ETN_SERVER_NET_CLOSE     	ASK_TYPE 	=	GJ_PUBLIC_NET_OPERATION+3	//服务端网络层关闭
+    ETN_ASK_USER_LEAVE       	ASK_TYPE 	=	GJ_PUBLIC_NET_OPERATION+4	//用户登录退出
+    ETN_SERVER_PUSH_NOTICE_MSG  ASK_TYPE 	=   GJ_PUBLIC_NET_OPERATION+5	//服务器推送通知
+    ETN_HEARTBEAT_PACK          ASK_TYPE 	=   GJ_PUBLIC_NET_OPERATION+6	//心跳包
+    ETN_SERVER_SUBSRCTIBE_MSG   ASK_TYPE 	=   GJ_PUBLIC_NET_OPERATION+7	//广播消息
 )
 
 type MSG_TYPE int32

@@ -2,23 +2,19 @@ package call
 
 import (
 	"fmt"
+	"midmsg/model"
 	"sync"
 	"time"
 )
+
+
 var TimeoutRequest sync.Pool
 
-type OtRequest struct{
-	Address string
-	Port 	string
-	Timeout time.Duration
-	Service string
-	InBody  []byte
-}
 
 func init()  {
 	TimeoutRequest = sync.Pool{
 		New: func() interface{} {
-			b := OtRequest{}
+			b := model.CallInfo{}
 			return &b
 		},
 	}
@@ -26,26 +22,26 @@ func init()  {
 
 func TestOtRequestPut(){
 
-	t := OtRequest{
+	t := model.CallInfo{
 		Address:"192.168.0.1",
 		Port:"5555",
 		Timeout:time.Second*0,
 		Service:"time.service",
-		InBody:[]byte("time.service1"),
+		MsgBody:[]byte("time.service1"),
 	}
-	t1 := OtRequest{
+	t1 := model.CallInfo{
 		Address:"192.168.0.2",
 		Port:"5555",
 		Timeout:time.Second*0,
 		Service:"time.service",
-		InBody:[]byte("time.service2"),
+		MsgBody:[]byte("time.service2"),
 	}
-	t2 := OtRequest{
+	t2 := model.CallInfo{
 		Address:"192.168.0.3",
 		Port:"5555",
 		Timeout:time.Second*0,
 		Service:"time.service",
-		InBody:[]byte("time.service3"),
+		MsgBody:[]byte("time.service3"),
 	}
 	TimeoutRequest.Put(&t2)
 	TimeoutRequest.Put(&t1)
@@ -57,15 +53,15 @@ func TestOtRequestPut(){
 
 func TestOtRequestGet(){
 	for{
-		rq := TimeoutRequest.Get().(*OtRequest)
+		rq := TimeoutRequest.Get().(*model.CallInfo)
 		if rq == nil {
 			fmt.Println("rq == nil")
 			return
 		}else{
 			//fmt.Println("rq.InBody:",rq.InBody==nil,"rq.Address:",rq.Address)
-			if rq.InBody != nil && rq.Address != "" && rq.Port != "" {
+			if rq.MsgBody != nil && rq.Address != "" && rq.Port != "" {
 				fmt.Println("取到了")
-				fmt.Println("rq.InBody:",string(rq.InBody),"rq.Address:",rq.Address)
+				fmt.Println("rq.InBody:",string(rq.MsgBody),"rq.Address:",rq.Address)
 			}else{
 				return
 			}
@@ -75,12 +71,12 @@ func TestOtRequestGet(){
 
 func CallPoolRequest(){
 	for{
-		rq := TimeoutRequest.Get().(*OtRequest)
+		rq := TimeoutRequest.Get().(*model.CallInfo)
 		if rq == nil {
 			return
 		}else{
-			if rq.InBody != nil && rq.Address != "" && rq.Port != "" {
-				CallClient(rq.Address,rq.Port,rq.Timeout,rq.Service,rq.InBody)
+			if rq.MsgBody != nil && rq.Address != "" && rq.Port != "" {
+				CallClient(*rq,nil,nil)
 			}else{
 				return
 			}
@@ -88,21 +84,14 @@ func CallPoolRequest(){
 	}
 }
 
-func PutPoolRequest(address,port string,timeout time.Duration,service string,msg []byte){
-	t := OtRequest{
-		Address:address,
-		Port:port,
-		Timeout:timeout,
-		Service:service,
-		InBody:msg,
-	}
-	TimeoutRequest.Put(&t)
+func PutPoolRequest(callinfo model.CallInfo){
+	TimeoutRequest.Put(&callinfo)
 }
 
 func TimerCallPool(){
 	for  {
 		select {
-		case <- time.After(time.Second * 2):
+		case <- time.After(time.Second * 200):
 			CallPoolRequest()
 		}
 	}

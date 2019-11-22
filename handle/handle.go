@@ -2,11 +2,15 @@ package handle
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
+	"midmsg/call"
 	"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
+	"sync"
+	"time"
 )
 
 func init()  {
@@ -84,34 +88,34 @@ func AnzalyBodyHead(inbody []byte) error {
 	clientType := utils.BytesToInt16(m_sClientType)
 	fmt.Println("clientType:",clientType)
 	/////check client type
-	//if clientType >= int16(model.ClientTypeMax) {
-	//	return model.ErrClientType
-	//}
+	if clientType >= int16(model.ClientTypeMax) {
+		return model.ErrClientType
+	}
 	//包头长度   2
 	m_sHeadLength := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	headLength := utils.BytesToInt16(m_sHeadLength)
 	fmt.Println("headLength:",headLength)
 	////check head length
-	//if headLength != 32 {
-	//	return model.ErrHeaderLength
-	//}
+	if headLength != 32 {
+		return model.ErrHeaderLength
+	}
 	//压缩方式   1
 	m_cCompressionWay := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	compressionWay := utils.BytesToUInt8(m_cCompressionWay)
 	fmt.Println("compressionWay:",compressionWay)
-	//if compressionWay >= uint8(model.CompressionWayMax) {
-	//	return model.ErrCompressionType
-	//}
+	if compressionWay >= uint8(model.CompressionWayMax) {
+		return model.ErrCompressionType
+	}
 	//加密方式   1
 	m_cEncryption := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	encryption := utils.BytesToUInt8(m_cEncryption)
 	fmt.Println("encryption:",encryption)
-	//if encryption >= uint8(model.Encryption_Max) {
-	//	return model.ErrEncrptyType
-	//}
+	if encryption >= uint8(model.Encryption_Max) {
+		return model.ErrEncrptyType
+	}
 	//协议标识   1
 	m_cSig := bodyHead[:1]
 	bodyHead = bodyHead[1:]
@@ -137,9 +141,9 @@ func AnzalyBodyHead(inbody []byte) error {
 	bufSize := utils.BytesToInt32(m_lBufSize)
 	fmt.Println("bufSize:",bufSize)
 	///// 校验数据长度
-	//if int32(len(inbody)-32) != bufSize {
-	//	return model.ErrCompressedLength
-	//}
+	if int32(len(inbody)-32) != bufSize {
+		return model.ErrCompressedLength
+	}
 
 	//压缩前长度 4
 	m_lUncompressedSize := bodyHead[:4]
@@ -164,23 +168,140 @@ func AnzalyBodyHead(inbody []byte) error {
 	return nil
 }
 
-func AnzalyBody(inbody []byte) (*pb.GJ_Net_Pack,error) {
-
+func AnzalyBody(inbody []byte,syncType uint8) (map[uint32]model.SendResultInfo,error) {
 	body := inbody[32:]
-
-	//var ptestStruct = *(**model.GJ_Net_Pack)(unsafe.Pointer(&body))
-	//fmt.Println("ptestStruct.data is : ", ptestStruct)
-
-
-	//netPack := model.GJ_Net_Pack{}
 	netPack := pb.GJ_Net_Pack{}
 	err :=  proto.Unmarshal(body,&netPack)
-	//err := json.Unmarshal(body,&netPack)
 	if err != nil {
 		return nil,err
 	}
 
-	fmt.Println("netPack:",netPack)
+	collectResult := map[uint32]model.SendResultInfo{}
 
-	return &netPack,nil
+	singleResult := make(chan model.SendResultInfo,len(netPack.M_Net_Pack))
+
+	for key,pack := range netPack.M_Net_Pack {
+		fmt.Println("====================i:",key)
+		fmt.Println("pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType) ////消息类型  0：无需回复 1：回复到发送方 2：回复到离线服务器
+		//model.MSG_TYPE_
+		fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型
+		fmt.Println("pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)  ///请求可否丢弃// 0：可丢弃 1：不可丢弃
+		fmt.Println("pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp) ////开始请求的本地时间戳
+		fmt.Println("pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence) ////客户请求序列，客户端维护
+		//model.ASK_TYPE
+		fmt.Println("pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)  /// 服务端请求类型
+		fmt.Println("pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack) /////默认为0
+		fmt.Println("pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)  ////过期时间  0：永不过期 >0:过期时间，以m_iSendTimeApp为基本
+		fmt.Println("pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)  /////0：成功 非0：失败
+		fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
+		fmt.Println("pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)  //// 同一请求次数
+
+		go CheckAndSend(key ,netPack.M_Net_Pack[key],syncType,singleResult)
+
+	}
+
+	close(singleResult)
+	/////读取返回值
+	for tmpResult := range singleResult{
+		collectResult[tmpResult.Key] = tmpResult
+	}
+
+	return collectResult,nil
+}
+
+func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint8,result chan model.SendResultInfo){
+	tSendResult := model.SendResultInfo{
+		Key:key,
+		SendCount:netpack.M_MsgBody.MSSendCount,
+		SuccessCount:0,
+		FailCount:0,
+		DiscardCount:0,
+		ReSendCount:0,
+		ResultList:nil,
+		CheckErr:nil,
+	}
+	///check ASK_TYPE
+	if netpack.M_MsgBody.MLAsktype > uint64(model.ETN_SERVER_SUBSRCTIBE_MSG) {
+		tSendResult.CheckErr = model.ErrAskType
+		result <- tSendResult
+		return
+	}
+	//// check Msg——type
+	if netpack.M_MsgBody.MCMsgType >= int32(model.MSG_TYPEMAX){
+		tSendResult.CheckErr = model.ErrMsgType
+		result <- tSendResult
+		return
+	}
+
+	//// check Send count
+	if netpack.M_MsgBody.MSSendCount < 1 {
+		tSendResult.CheckErr = model.ErrSendCount
+		result <- tSendResult
+		return
+	}
+
+	// 失败了，是否要丢弃
+	isDiscard := false
+	if netpack.M_MsgBody.MIDiscard == 0 {
+		isDiscard = true
+	}
+
+	/// select ASK_TYPE
+	sevices := utils.GetServiceByKey(fmt.Sprintf("%d",netpack.M_MsgBody.MLAsktype))
+	address := sevices["address"].(string)
+	port 	:= fmt.Sprintf("%d",sevices["port"])
+	service := sevices["service"].(string)
+	sendBytes,err := proto.Marshal(netpack)
+	if err != nil {
+		tSendResult.CheckErr = err
+		result <- tSendResult
+		return
+	}
+	///// 超时时间
+	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
+
+	sendInfo := model.CallInfo{
+		Address:address,
+		Port:port,
+		Service:service,
+		MsgBody:sendBytes,
+		Timeout:timeout,
+		IsDiscard:isDiscard,
+		AskSequence:netpack.M_MsgBody.MLAskSequence,
+		SendTimeApp:netpack.M_MsgBody.MISendTimeApp,
+		MsgType :netpack.M_MsgBody.MCMsgType,
+		MsgAckType :netpack.M_MsgBody.MCMsgAckType,
+		SyncType:syncType,
+	}
+
+	callResult := make(chan model.SingleResultInfo,netpack.M_MsgBody.MSSendCount)
+	wait := sync.WaitGroup{}
+	for i  := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
+		wait.Add(1)
+		go call.CallClient(sendInfo,callResult,&wait)
+	}
+	wait.Wait()
+
+	resultList := make([]model.SingleResultInfo,0)
+	failedCount := int32(0)
+	discardCount := int32(0)
+	resentCount := int32(0)
+	for tmpRsult := range callResult{
+		resultList = append(resultList,tmpRsult)
+		if tmpRsult.Errinfo != nil {
+			failedCount = failedCount + 1
+		}
+		if tmpRsult.IsDisCard == true {
+			discardCount =  discardCount + 1
+		}
+		if tmpRsult.IsResend == true {
+			resentCount = resentCount + 1
+		}
+	}
+	tSendResult.FailCount = failedCount
+	tSendResult.SuccessCount = tSendResult.SendCount - failedCount
+	tSendResult.ReSendCount = resentCount
+	tSendResult.DiscardCount = discardCount
+
+	result <- tSendResult
 }
