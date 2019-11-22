@@ -9,6 +9,7 @@ var (
 	Con *Config
 	Address string
 	Port uint32
+	ClientPort uint32
 	Services map[string]interface{}
 	MaxQueue uint32
 	MaxWorker uint32
@@ -36,6 +37,7 @@ func init()  {
 	Con = InitConfig()
 	Address = GetMidAddress()
 	Port = GetMidPort()
+	ClientPort = GetClientPort()
 	Services = GetServices()
 	MaxWorker = GetMaxWorker()
 	MaxQueue = GetMaxQueue()
@@ -47,6 +49,10 @@ func GetMidAddress()string{
 
 func GetMidPort()uint32{
 	return Con.V.GetUint32("port")
+}
+
+func GetClientPort()uint32{
+	return Con.V.GetUint32("clientport")
 }
 
 func GetMaxWorker()uint32{

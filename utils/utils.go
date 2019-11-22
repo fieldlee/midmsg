@@ -8,8 +8,11 @@ import (
 	"crypto/des"
 	"encoding/binary"
 	"fmt"
+	"context"
+	"google.golang.org/grpc/peer"
 	"io/ioutil"
 	"midmsg/model"
+	"net"
 	"runtime"
 	"strconv"
 	"strings"
@@ -174,4 +177,17 @@ func Decrypt3DES(src []byte,key []byte) []byte {
 	blockmode.CryptBlocks(src,src)
 	src=unpadding(src)
 	return src
+}
+
+
+func GetClietIP(ctx context.Context) (string, error) {
+	pr, ok := peer.FromContext(ctx)
+	if !ok {
+		return "", fmt.Errorf("getClinetIP, invoke FromContext() failed")
+	}
+	if pr.Addr == net.Addr(nil) {
+		return "", fmt.Errorf("getClientIP, peer.Addr is nil")
+	}
+
+	return pr.Addr.String(), nil
 }

@@ -9,16 +9,48 @@ service MidService {
 }
 
 service ClientService{
-    rpc Call(NetReqInfo)   returns (NetRspInfo) {};
+    rpc Call(NetReqInfo)   returns (CallRspInfo) {};
+    rpc AsyncCall(SingleResultInfo) returns (CallRspInfo) {};
 }
 
 message NetReqInfo
 {
-    bytes   m_Body = 1;     ///请求rpc bytes
+    bytes   m_Body   = 1;     ///请求rpc bytes
 }
+
+message CallRspInfo
+{
+    bytes  m_Net_Rsp = 1;
+}
+
 message NetRspInfo
 {
-    bytes   m_Resp = 1;
+    map<uint32,SendResultInfo>  m_Net_Rsp = 1 ;
+    bytes                       m_Err     = 2 ;
+}
+
+message SendResultInfo  {
+    uint32          Key = 1;
+    int32     SendCount = 2;       // 发送的数量
+    int32  SuccessCount = 3;       //  成功的数量
+    int32     FailCount = 4;       //  失败的数量
+    int32  DiscardCount = 5;       //  丢弃的数量
+    int32   ReSendCount = 6;       //  重发的数量
+    bytes 	   CheckErr = 7;       //  校验发生的错误
+    map<uint32,SingleResultInfo>  ResultList = 8;    // 每个请求的处理结果
+}
+
+message SingleResultInfo  {
+    uint64  AskSequence = 1;      // 客户端生成的ask 序列号
+    uint64  SendTimeApp = 2;      // 客户端生成的时间序
+    int32   MsgType     = 3;      // message 类型
+    int32   MsgAckType  = 4;      // ack message 类型
+    uint32  SyncType    = 5;	 ///// 0 同步  1 异步
+ 	bool    IsTimeOut   = 6;
+    bool    IsDisCard   = 7;
+    bool    IsResend    = 8;
+	bytes   Errinfo     = 9;
+ 	bytes   Result      = 10;
 }
 
 message ClientRsqInfo {
@@ -37,17 +69,17 @@ message Net_Pack
     bytes							m_Msg = 1;							//每个服务类型定义的protobuf结构，打包成流缓存在该字段
     message Min_Net_MsgBody
     {
-        uint64					m_lAsktype 			= 1;					//请求的服务类型
+        uint64					m_lAsktype 			    = 1;					//请求的服务类型
         uint64					m_lServerSequence		= 2;					//服务端响应序列号
         uint64					m_lAskSequence			= 3;					//客户端请求序列号
         int32					m_cMsgAckType			= 4;					//0 无需回复, 1 回复到发送方, 2 回复到离线服务器
-        int32					m_cMsgType			= 5;					//消息类型
+        int32					m_cMsgType			    = 5;					//消息类型
         int32					m_sSendCount			= 6;					//同一请求，请求服务端的次数
         uint32					m_lExpireTime			= 7;					//过期时间，0表示永不过期
         uint64					m_iSendTimeApp			= 8;					//请求发送的时间，单位秒
-        int32					m_lResult			= 9;					//0: SUCCESS  !0:FAILURE
-        uint64					m_lBack				= 10;					//备份数据，默认为0
-        int32					m_iDiscard			= 11;					//消息是否可以丢弃 0 表示可以丢弃 1表示不可以
+        int32					m_lResult			    = 9;					//0: SUCCESS  !0:FAILURE
+        uint64					m_lBack				    = 10;					//备份数据，默认为0
+        int32					m_iDiscard			    = 11;					//消息是否可以丢弃 0 表示可以丢弃 1表示不可以
     }
     Min_Net_MsgBody					m_MsgBody = 2;
 }

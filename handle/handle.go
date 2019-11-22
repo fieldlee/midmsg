@@ -2,7 +2,6 @@ package handle
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
 	"midmsg/call"
@@ -20,16 +19,22 @@ func init()  {
 type MsgHandle struct {}
 
 func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo, error) {
+	ipaddr,err := utils.GetClietIP(ctx)
+	if err != nil {
+		return nil,err
+	}
 
 	out := make(chan *pb.NetRspInfo)
-	err := make(chan error)
+	//err := make(chan error)
 	//// 发送body到队列
 	handleBody := HandleBody{
+		ClientIp:ipaddr,
 		M_Body:in.M_Body,
 		Type: model.CALL_CLIENT_SYNC,
 		Out: out,
-		Err:err,
+		//Err:err,
 	}
+
 
 	JobQueue <- handleBody
 
@@ -37,21 +42,27 @@ func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,
 		select {
 		case netrep := <-out:
 			return netrep,nil
-		case errinfo := <-err:
-			return nil,errinfo
+		//case errinfo := <-err:
+		//	return nil,errinfo
 		}
 	}
 }
 
 func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo, error) {
+	ipaddr,err := utils.GetClietIP(ctx)
+	if err != nil {
+		return nil,err
+	}
+
 	out := make(chan *pb.NetRspInfo)
-	err := make(chan error)
+	//err := make(chan error)
 	//// 发送body到队列
 	handleBody := HandleBody{
+		ClientIp:ipaddr,
 		M_Body:in.M_Body,
 		Type: model.CALL_CLIENT_ASYNC,
 		Out: out,
-		Err:err,
+		//Err:err,
 	}
 
 	JobQueue <- handleBody
@@ -59,15 +70,13 @@ func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo
 	// 异步处理只处理错误信息
 	for {
 		select {
-		case errinfo := <-err:
-			if errinfo == nil {
-				return nil,nil
-			}
-			return nil,errinfo
+		case netrep := <-out:
+			return netrep,nil
+			//case errinfo := <-err:
+			//	return nil,errinfo
 		}
 	}
 }
-
 
 func AnzalyBodyHead(inbody []byte) error {
 	bodyHead := inbody[:32]
@@ -168,17 +177,19 @@ func AnzalyBodyHead(inbody []byte) error {
 	return nil
 }
 
-func AnzalyBody(inbody []byte,syncType uint8) (map[uint32]model.SendResultInfo,error) {
+func AnzalyBody(inbody []byte,syncType uint32,clientIP string) (*pb.NetRspInfo,error) {
 	body := inbody[32:]
 	netPack := pb.GJ_Net_Pack{}
 	err :=  proto.Unmarshal(body,&netPack)
 	if err != nil {
-		return nil,err
+		return &pb.NetRspInfo{
+			M_Err:[]byte(err.Error()),
+		},nil
 	}
 
-	collectResult := map[uint32]model.SendResultInfo{}
+	collectResult := map[uint32]*pb.SendResultInfo{}
 
-	singleResult := make(chan model.SendResultInfo,len(netPack.M_Net_Pack))
+	singleResult := make(chan pb.SendResultInfo,len(netPack.M_Net_Pack))
 
 	for key,pack := range netPack.M_Net_Pack {
 		fmt.Println("====================i:",key)
@@ -196,21 +207,24 @@ func AnzalyBody(inbody []byte,syncType uint8) (map[uint32]model.SendResultInfo,e
 		fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
 		fmt.Println("pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)  //// 同一请求次数
 
-		go CheckAndSend(key ,netPack.M_Net_Pack[key],syncType,singleResult)
+		go CheckAndSend(key ,netPack.M_Net_Pack[key],syncType,clientIP,singleResult)
 
 	}
 
 	close(singleResult)
 	/////读取返回值
-	for tmpResult := range singleResult{
-		collectResult[tmpResult.Key] = tmpResult
+	for i := 0;i<len(netPack.M_Net_Pack);i++{
+		tmpResult := <- singleResult
+		collectResult[tmpResult.Key] = &tmpResult
 	}
 
-	return collectResult,nil
+	return &pb.NetRspInfo{
+		M_Net_Rsp:collectResult,
+	},nil
 }
 
-func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint8,result chan model.SendResultInfo){
-	tSendResult := model.SendResultInfo{
+func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint32,clientIP string,result chan pb.SendResultInfo){
+	tSendResult := pb.SendResultInfo{
 		Key:key,
 		SendCount:netpack.M_MsgBody.MSSendCount,
 		SuccessCount:0,
@@ -222,20 +236,20 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint8,result chan mod
 	}
 	///check ASK_TYPE
 	if netpack.M_MsgBody.MLAsktype > uint64(model.ETN_SERVER_SUBSRCTIBE_MSG) {
-		tSendResult.CheckErr = model.ErrAskType
+		tSendResult.CheckErr = []byte(model.ErrAskType.Error())
 		result <- tSendResult
 		return
 	}
 	//// check Msg——type
 	if netpack.M_MsgBody.MCMsgType >= int32(model.MSG_TYPEMAX){
-		tSendResult.CheckErr = model.ErrMsgType
+		tSendResult.CheckErr = []byte(model.ErrMsgType.Error())
 		result <- tSendResult
 		return
 	}
 
 	//// check Send count
 	if netpack.M_MsgBody.MSSendCount < 1 {
-		tSendResult.CheckErr = model.ErrSendCount
+		tSendResult.CheckErr = []byte(model.ErrSendCount.Error())
 		result <- tSendResult
 		return
 	}
@@ -253,7 +267,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint8,result chan mod
 	service := sevices["service"].(string)
 	sendBytes,err := proto.Marshal(netpack)
 	if err != nil {
-		tSendResult.CheckErr = err
+		tSendResult.CheckErr = []byte(err.Error())
 		result <- tSendResult
 		return
 	}
@@ -261,6 +275,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint8,result chan mod
 	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
 
 	sendInfo := model.CallInfo{
+		ClientIP:clientIP,
 		Address:address,
 		Port:port,
 		Service:service,
@@ -274,7 +289,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint8,result chan mod
 		SyncType:syncType,
 	}
 
-	callResult := make(chan model.SingleResultInfo,netpack.M_MsgBody.MSSendCount)
+	callResult := make(chan pb.SingleResultInfo,netpack.M_MsgBody.MSSendCount)
 	wait := sync.WaitGroup{}
 	for i  := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
 		wait.Add(1)
@@ -282,7 +297,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint8,result chan mod
 	}
 	wait.Wait()
 
-	resultList := make([]model.SingleResultInfo,0)
+	resultList := make([]pb.SingleResultInfo,0)
 	failedCount := int32(0)
 	discardCount := int32(0)
 	resentCount := int32(0)

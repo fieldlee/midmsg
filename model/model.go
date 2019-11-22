@@ -3,55 +3,8 @@ package model
 import (
 	"github.com/micro/go-micro/errors"
 	"time"
-	pb "midmsg/proto"
 )
 
-type Min_Net_MsgBody struct {
-	m_lAsktype  		uint64 		//请求的服务类型
-	m_lServerSequence   uint64		//服务端响应序列号
-	m_lAskSequence		uint64		//客户端请求序列号
-	m_cMsgAckType		int32		//0 无需回复, 1 回复到发送方, 2 回复到离线服务器
-	m_cMsgType			int32		//消息类型
-	m_sSendCount		int32   	//同一请求，请求服务端的次数
-	m_lExpireTime		uint32		//过期时间，0表示永不过期
-	m_iSendTimeApp		uint64		//请求发送的时间，单位秒
-	m_lResult			int32		//0: SUCCESS  !0:FAILURE
-	m_lBack				uint64		//备份数据，默认为0
-	m_iDiscard			int32		//消息是否可以丢弃 0 表示可以丢弃 1表示不可以
-}
-
-type  Net_Pack struct {
-	m_Msg	    []byte					//每个服务类型定义的protobuf结构，打包成流缓存在该字段
-	m_MsgBody   Min_Net_MsgBody
-}
-
-type GJ_Net_Pack struct{
-	m_Net_Pack	map[uint32]Net_Pack		//可缓存多个客户端请求
-}
-
-type SendResultInfo struct {
-	Key 			uint32
-	SendCount 		int32
-	SuccessCount 	int32
-	FailCount 		int32
-	DiscardCount 	int32
-	ReSendCount		int32
-	ResultList      []SingleResultInfo
-	CheckErr        error
-}
-
-type SingleResultInfo struct {
-	AskSequence 	uint64
-	SendTimeApp 	uint64
-	MsgType 		int32
-	MsgAckType 		int32
-	SyncType 		uint8     ///// 0 同步  1 异步
-	IsTimeOut		bool
-	IsDisCard       bool
-	IsResend		bool
-	Errinfo 		error
-	Result 			*pb.NetRspInfo
-}
 
 type CallInfo struct {
 	AskSequence 	uint64
@@ -59,10 +12,11 @@ type CallInfo struct {
 	MsgType 		int32
 	MsgAckType 		int32
 	IsDiscard       bool
-	SyncType 		uint8
+	SyncType 		uint32
 	Address 		string
 	Port 			string
 	Service 		string
+	ClientIP		string
 	Timeout 		time.Duration
 	MsgBody 		[]byte
 }

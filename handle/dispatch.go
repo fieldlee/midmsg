@@ -6,10 +6,11 @@ import (
 )
 
 type HandleBody struct {
-	M_Body []byte
-	Type   model.CALL_CLIENT_TYPE
-	Out    chan *pb.NetRspInfo
-	Err    chan error
+	M_Body 		[]byte
+	Type   		model.CALL_CLIENT_TYPE
+	ClientIp 	string
+	Out    		chan *pb.NetRspInfo
+	Err    		chan error
 }
 
 type Dispatcher struct {
