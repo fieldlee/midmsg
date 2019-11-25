@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gogo/protobuf/proto"
 	"midmsg/call"
+	"midmsg/log"
 	"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
@@ -81,17 +82,19 @@ func AnzalyBodyHead(inbody []byte) error {
 	bodyHead = bodyHead[8:]
 
 	tag := utils.BytesToString(m_tag)
-	fmt.Println("tag:",tag)
+
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"tag:",tag)
 	//数据版本  2
 	m_lDateVersion := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	version := utils.BytesToInt16(m_lDateVersion)
-	fmt.Println("version:",version)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"version:",version)
+
 	//客户端类型 2
 	m_sClientType := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	clientType := utils.BytesToInt16(m_sClientType)
-	fmt.Println("clientType:",clientType)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"clientType:",clientType)
 	/////check client type
 	if clientType >= int16(model.ClientTypeMax) {
 		return model.ErrClientType
@@ -100,7 +103,7 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_sHeadLength := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	headLength := utils.BytesToInt16(m_sHeadLength)
-	fmt.Println("headLength:",headLength)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"headLength:",headLength)
 	////check head length
 	if headLength != 32 {
 		return model.ErrHeaderLength
@@ -109,7 +112,8 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_cCompressionWay := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	compressionWay := utils.BytesToUInt8(m_cCompressionWay)
-	fmt.Println("compressionWay:",compressionWay)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"compressionWay:",compressionWay)
+
 	if compressionWay >= uint8(model.CompressionWayMax) {
 		return model.ErrCompressionType
 	}
@@ -117,7 +121,7 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_cEncryption := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	encryption := utils.BytesToUInt8(m_cEncryption)
-	fmt.Println("encryption:",encryption)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"encryption:",encryption)
 	if encryption >= uint8(model.Encryption_Max) {
 		return model.ErrEncrptyType
 	}
@@ -125,26 +129,27 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_cSig := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	sig := utils.BytesToUInt8(m_cSig)
-	fmt.Println("sig:",sig)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"sig:",sig)
 	//数据流格式  1
 	m_cdataFormat := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	format := utils.BytesToUInt8(m_cdataFormat)
-	fmt.Println("format:",format)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"format:",format)
 	//网络标记   1
 	m_cNetFlag := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	flag := utils.BytesToUInt8(m_cNetFlag)
-	fmt.Println("flag:",flag)
+
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"flag:",flag)
 	//占位符     1
 	m_cBack1 := bodyHead[:1]
 	bodyHead = bodyHead[1:]
-	fmt.Println("占位符1:",utils.BytesToUInt8(m_cBack1))
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"占位符1:",utils.BytesToUInt8(m_cBack1))
 	//数据长度   4
 	m_lBufSize := bodyHead[:4]
 	bodyHead = bodyHead[4:]
 	bufSize := utils.BytesToInt32(m_lBufSize)
-	fmt.Println("bufSize:",bufSize)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"bufSize:",bufSize)
 	///// 校验数据长度
 	if int32(len(inbody)-32) != bufSize {
 		return model.ErrCompressedLength
@@ -154,22 +159,20 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_lUncompressedSize := bodyHead[:4]
 	bodyHead = bodyHead[4:]
 	uncompressiondSize := utils.BytesToInt32(m_lUncompressedSize)
-	fmt.Println("compressiondSize:",uncompressiondSize)
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"uncompressiondSize:",uncompressiondSize)
 	if bufSize > uncompressiondSize {
 		return model.ErrCompresseduncompressedLength
 	}
 	//////如果压缩，解压然后比较长度
-
 	if compressionWay == uint8(model.Compression_zip){
 		unzipBytes:=utils.UnzipBytes(inbody[32:])
 		if uncompressiondSize != int32(len(unzipBytes)){
 			return model.ErrUNCompressedLength
 		}
 	}
-
 	//预留位     4
 	m_lBack2 := bodyHead[:]
-	fmt.Println("占位符2:",utils.BytesToInt32(m_lBack2))
+	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"占位符2:",utils.BytesToInt32(m_lBack2))
 	return nil
 }
 
@@ -188,7 +191,7 @@ func AnzalyBody(inbody []byte,syncType uint32,clientIP string) (*pb.NetRspInfo,e
 	singleResult := make(chan pb.SendResultInfo,len(netPack.M_Net_Pack))
 
 	for key,_ := range netPack.M_Net_Pack {
-		fmt.Println("====================i:",key)
+		log.TraceByFields(map[string]interface{}{"func":"AnzalyBody"},"net pack key:",key)
 		//fmt.Println("pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType) ////消息类型  0：无需回复 1：回复到发送方 2：回复到离线服务器
 		//model.MSG_TYPE_
 		//fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型
@@ -242,14 +245,12 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint32,clientIP strin
 		result <- tSendResult
 		return
 	}
-
 	//// check Send count
 	if netpack.M_MsgBody.MSSendCount < 1 {
 		tSendResult.CheckErr = []byte(model.ErrSendCount.Error())
 		result <- tSendResult
 		return
 	}
-
 	// 失败了，是否要丢弃
 	isDiscard := false
 	if netpack.M_MsgBody.MIDiscard == 0 {

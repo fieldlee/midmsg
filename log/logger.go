@@ -6,8 +6,8 @@ import (
 )
 
 func init() {
-	// 以JSON格式为输出，代替默认的ASCII格式
-	logrus.SetFormatter(&logrus.JSONFormatter{})
+	// 以JSON格式为输出，代替默认的ASCII格式  JSON OR TEXT
+	logrus.SetFormatter(&logrus.TextFormatter{})
 	// 以Stdout为输出，代替默认的stderr
 	logrus.SetOutput(os.Stdout)
 	// 设置日志等级

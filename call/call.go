@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-
-
 func AsyncCallClient(callinfo model.CallInfo){
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())

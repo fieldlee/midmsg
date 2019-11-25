@@ -3,6 +3,7 @@ package handle
 import (
 	"fmt"
 	"midmsg/model"
+	"midmsg/log"
 	pb "midmsg/proto"
 	"midmsg/utils"
 )
@@ -38,7 +39,7 @@ func NewDispatcher(maxWorkers uint32,jobDone chan struct{}) *Dispatcher {
 }
 
 func (d *Dispatcher) Run() {
-	fmt.Println("Worker queue dispatcher started...")
+	log.Info("Worker queue dispatcher started...")
 	// starting n number of workers
 	for i := 0; i < int(d.MaxWork); i++ {
 		worker := NewWorker(d.WorkerPool,d.JobDone)
