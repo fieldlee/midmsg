@@ -104,8 +104,9 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	}
 
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
-	fmt.Println("call client address:",caddr)
-	if sResult.SyncType == 1 { ///// 异步
+	log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client address:",caddr)
+
+	if sResult.SyncType == uint32(model.CALL_CLIENT_ASYNC) { ///// 异步
 		/// 异步调用goroutine
 		go AsyncCallClient(callinfo)
 
@@ -147,8 +148,9 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		return
 	}else{
 		if tResult != nil {
-			fmt.Println("===============================================================")
-			fmt.Println(string(r.M_Net_Rsp))
+
+			log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client return value:",string(r.M_Net_Rsp))
+
 			//////// 是否将结果返回到客户端  服务器等  /0 无需回复, 1 回复到发送方, 2 回复到离线服务器
 			if sResult.MsgAckType  == 1 {
 				sResult.Result = r.M_Net_Rsp

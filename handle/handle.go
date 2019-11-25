@@ -82,19 +82,18 @@ func AnzalyBodyHead(inbody []byte) error {
 	bodyHead = bodyHead[8:]
 
 	tag := utils.BytesToString(m_tag)
-
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"tag:",tag)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"tag:",tag)
 	//数据版本  2
 	m_lDateVersion := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	version := utils.BytesToInt16(m_lDateVersion)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"version:",version)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"version:",version)
 
 	//客户端类型 2
 	m_sClientType := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	clientType := utils.BytesToInt16(m_sClientType)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"clientType:",clientType)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"clientType:",clientType)
 	/////check client type
 	if clientType >= int16(model.ClientTypeMax) {
 		return model.ErrClientType
@@ -103,7 +102,7 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_sHeadLength := bodyHead[:2]
 	bodyHead = bodyHead[2:]
 	headLength := utils.BytesToInt16(m_sHeadLength)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"headLength:",headLength)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"headLength:",headLength)
 	////check head length
 	if headLength != 32 {
 		return model.ErrHeaderLength
@@ -112,7 +111,7 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_cCompressionWay := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	compressionWay := utils.BytesToUInt8(m_cCompressionWay)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"compressionWay:",compressionWay)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"compressionWay:",compressionWay)
 
 	if compressionWay >= uint8(model.CompressionWayMax) {
 		return model.ErrCompressionType
@@ -121,7 +120,7 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_cEncryption := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	encryption := utils.BytesToUInt8(m_cEncryption)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"encryption:",encryption)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"encryption:",encryption)
 	if encryption >= uint8(model.Encryption_Max) {
 		return model.ErrEncrptyType
 	}
@@ -129,27 +128,27 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_cSig := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	sig := utils.BytesToUInt8(m_cSig)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"sig:",sig)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"sig:",sig)
 	//数据流格式  1
 	m_cdataFormat := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	format := utils.BytesToUInt8(m_cdataFormat)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"format:",format)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"format:",format)
 	//网络标记   1
 	m_cNetFlag := bodyHead[:1]
 	bodyHead = bodyHead[1:]
 	flag := utils.BytesToUInt8(m_cNetFlag)
 
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"flag:",flag)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"flag:",flag)
 	//占位符     1
 	m_cBack1 := bodyHead[:1]
 	bodyHead = bodyHead[1:]
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"占位符1:",utils.BytesToUInt8(m_cBack1))
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"占位符1:",utils.BytesToUInt8(m_cBack1))
 	//数据长度   4
 	m_lBufSize := bodyHead[:4]
 	bodyHead = bodyHead[4:]
 	bufSize := utils.BytesToInt32(m_lBufSize)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"bufSize:",bufSize)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"bufSize:",bufSize)
 	///// 校验数据长度
 	if int32(len(inbody)-32) != bufSize {
 		return model.ErrCompressedLength
@@ -159,7 +158,7 @@ func AnzalyBodyHead(inbody []byte) error {
 	m_lUncompressedSize := bodyHead[:4]
 	bodyHead = bodyHead[4:]
 	uncompressiondSize := utils.BytesToInt32(m_lUncompressedSize)
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"uncompressiondSize:",uncompressiondSize)
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"uncompressiondSize:",uncompressiondSize)
 	if bufSize > uncompressiondSize {
 		return model.ErrCompresseduncompressedLength
 	}
@@ -172,7 +171,7 @@ func AnzalyBodyHead(inbody []byte) error {
 	}
 	//预留位     4
 	m_lBack2 := bodyHead[:]
-	log.TraceByFields(map[string]interface{}{"func":"AnzalyBodyHead"},"占位符2:",utils.BytesToInt32(m_lBack2))
+	log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"占位符2:",utils.BytesToInt32(m_lBack2))
 	return nil
 }
 
@@ -191,7 +190,7 @@ func AnzalyBody(inbody []byte,syncType uint32,clientIP string) (*pb.NetRspInfo,e
 	singleResult := make(chan pb.SendResultInfo,len(netPack.M_Net_Pack))
 
 	for key,_ := range netPack.M_Net_Pack {
-		log.TraceByFields(map[string]interface{}{"func":"AnzalyBody"},"net pack key:",key)
+		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"net pack key:",key)
 		//fmt.Println("pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType) ////消息类型  0：无需回复 1：回复到发送方 2：回复到离线服务器
 		//model.MSG_TYPE_
 		//fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型

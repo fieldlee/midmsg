@@ -1,57 +1,144 @@
 package log
-
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
-	"os"
+	"runtime"
+	"strings"
 )
+var logger = logrus.New()
+// 封装logrus.Fields
+type Fields logrus.Fields
 
-func init() {
-	// 以JSON格式为输出，代替默认的ASCII格式  JSON OR TEXT
-	logrus.SetFormatter(&logrus.TextFormatter{})
-	// 以Stdout为输出，代替默认的stderr
-	logrus.SetOutput(os.Stdout)
-	// 设置日志等级
-	logrus.SetLevel(logrus.InfoLevel)
+func SetLogLevel(level logrus.Level) {
+	logger.Level = level
+}
+func SetLogFormatter(formatter logrus.Formatter) {
+	logger.Formatter = formatter
 }
 
-func Trace(args ...interface{}){
-	logrus.Traceln(args)
+// Trace
+func Trace(args ...interface{}) {
+	if logger.Level >= logrus.TraceLevel {
+		entry := logger.WithFields(logrus.Fields{})
+		entry.Data["file"] = fileInfo(2)
+		entry.Trace(args)
+	}
+}
+// Trace
+func TraceWithFields(f map[string]interface{},l ...interface{}) {
+	if logger.Level >= logrus.TraceLevel {
+		entry := logger.WithFields(logrus.Fields(f))
+		entry.Data["file"] = fileInfo(2)
+		entry.Trace(l...)
+	}
 }
 
-func TraceByFields(fields map[string]interface{},args ...interface{}){
-	logrus.WithFields(logrus.Fields(fields)).Traceln(args)
+// Debug
+func Debug(args ...interface{}) {
+	if logger.Level >= logrus.DebugLevel {
+		entry := logger.WithFields(logrus.Fields{})
+		entry.Data["file"] = fileInfo(2)
+		entry.Debug(args)
+	}
 }
-
-func Info(args ...interface{}){
-	logrus.Infoln(args)
+// 带有field的Debug
+func DebugWithFields(f map[string]interface{},l ...interface{}) {
+	if logger.Level >= logrus.DebugLevel {
+		entry := logger.WithFields(logrus.Fields(f))
+		entry.Data["file"] = fileInfo(2)
+		entry.Debug(l...)
+	}
 }
-
-func InfoByFields(fields map[string]interface{},args ...interface{}){
-	logrus.WithFields(logrus.Fields(fields)).Infoln(args)
+// Info
+func Info(args ...interface{}) {
+	if logger.Level >= logrus.InfoLevel {
+		entry := logger.WithFields(logrus.Fields{})
+		entry.Data["file"] = fileInfo(2)
+		entry.Info(args...)
+	}
 }
-
-func Debug(args ...interface{}){
-	logrus.Debugln(args)
+// 带有field的Info
+func InfoWithFields(f map[string]interface{},l ...interface{}) {
+	if logger.Level >= logrus.InfoLevel {
+		entry := logger.WithFields(logrus.Fields(f))
+		entry.Data["file"] = fileInfo(2)
+		entry.Info(l...)
+	}
 }
-
-func DebugByFields(fields map[string]interface{},args ...interface{})  {
-	logrus.WithFields(logrus.Fields(fields)).Debugln(args)
+// Warn
+func Warn(args ...interface{}) {
+	if logger.Level >= logrus.WarnLevel {
+		entry := logger.WithFields(logrus.Fields{})
+		entry.Data["file"] = fileInfo(2)
+		entry.Warn(args...)
+	}
 }
-
-func Error(args ...interface{}){
-	logrus.Errorln(args)
+// 带有Field的Warn
+func WarnWithFields(f map[string]interface{},l ...interface{}) {
+	if logger.Level >= logrus.WarnLevel {
+		entry := logger.WithFields(logrus.Fields(f))
+		entry.Data["file"] = fileInfo(2)
+		entry.Warn(l...)
+	}
 }
-
-func ErrorByFields(fields map[string]interface{},args ...interface{}){
-	logrus.WithFields(logrus.Fields(fields)).Errorln(args)
+// Error
+func Error(args ...interface{}) {
+	if logger.Level >= logrus.ErrorLevel {
+		entry := logger.WithFields(logrus.Fields{})
+		entry.Data["file"] = fileInfo(2)
+		entry.Error(args...)
+	}
 }
-
-
-
-func Fatal(args ...interface{}){
-	logrus.Fatalln(args)
+// 带有Fields的Error
+func ErrorWithFields(f map[string]interface{},l ...interface{}) {
+	if logger.Level >= logrus.ErrorLevel {
+		entry := logger.WithFields(logrus.Fields(f))
+		entry.Data["file"] = fileInfo(2)
+		entry.Error(l...)
+	}
 }
-
-func FatalByFields(fields map[string]interface{},args ...interface{}){
-	logrus.WithFields(logrus.Fields(fields)).Fatalln(args)
+// Fatal
+func Fatal(args ...interface{}) {
+	if logger.Level >= logrus.FatalLevel {
+		entry := logger.WithFields(logrus.Fields{})
+		entry.Data["file"] = fileInfo(2)
+		entry.Fatal(args...)
+	}
+}
+// 带有Field的Fatal
+func FatalWithFields(f map[string]interface{},l ...interface{}) {
+	if logger.Level >= logrus.FatalLevel {
+		entry := logger.WithFields(logrus.Fields(f))
+		entry.Data["file"] = fileInfo(2)
+		entry.Fatal(l...)
+	}
+}
+// Panic
+func Panic(args ...interface{}) {
+	if logger.Level >= logrus.PanicLevel {
+		entry := logger.WithFields(logrus.Fields{})
+		entry.Data["file"] = fileInfo(2)
+		entry.Panic(args...)
+	}
+}
+// 带有Field的Panic
+func PanicWithFields(f map[string]interface{},l ...interface{}) {
+	if logger.Level >= logrus.PanicLevel {
+		entry := logger.WithFields(logrus.Fields(f))
+		entry.Data["file"] = fileInfo(2)
+		entry.Panic(l...)
+	}
+}
+func fileInfo(skip int) string {
+	_, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		file = "<???>"
+		line = 1
+	} else {
+		slash := strings.LastIndex(file, "/")
+		if slash >= 0 {
+			file = file[slash+1:]
+		}
+	}
+	return fmt.Sprintf("%s:%d", file, line)
 }

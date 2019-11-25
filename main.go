@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"midmsg/handle"
@@ -22,12 +23,14 @@ var (
 
 func main()  {
 
+	log.SetLogLevel(logrus.TraceLevel)
+	log.SetLogFormatter(&logrus.TextFormatter{DisableColors:true})
+
 	d := handle.NewDispatcher(utils.MaxWorker,handle.JobDone)
 	d.Run()
 
 	listener, err := net.Listen("tcp", Host+":"+Port)
 	if err != nil {
-		fmt.Println(err.Error())
 		log.Fatal("faile listen at: " + Host + ":" + Port)
 
 	} else {
