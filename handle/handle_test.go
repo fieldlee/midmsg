@@ -9,7 +9,7 @@ import (
 )
 
 func TestAnzalyBodyHead(t *testing.T) {
-	fileName := "../1-1.txt"
+	fileName := "../2.txt"
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println("Open file error!", err)

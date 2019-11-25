@@ -188,6 +188,5 @@ func GetClietIP(ctx context.Context) (string, error) {
 	if pr.Addr == net.Addr(nil) {
 		return "", fmt.Errorf("getClientIP, peer.Addr is nil")
 	}
-
 	return pr.Addr.String(), nil
 }

@@ -190,21 +190,21 @@ func AnzalyBody(inbody []byte,syncType uint32,clientIP string) (*pb.NetRspInfo,e
 
 	singleResult := make(chan pb.SendResultInfo,len(netPack.M_Net_Pack))
 
-	for key,pack := range netPack.M_Net_Pack {
+	for key,_ := range netPack.M_Net_Pack {
 		fmt.Println("====================i:",key)
-		fmt.Println("pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType) ////消息类型  0：无需回复 1：回复到发送方 2：回复到离线服务器
+		//fmt.Println("pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType) ////消息类型  0：无需回复 1：回复到发送方 2：回复到离线服务器
 		//model.MSG_TYPE_
-		fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型
-		fmt.Println("pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)  ///请求可否丢弃// 0：可丢弃 1：不可丢弃
-		fmt.Println("pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp) ////开始请求的本地时间戳
-		fmt.Println("pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence) ////客户请求序列，客户端维护
+		//fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型
+		//fmt.Println("pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)  ///请求可否丢弃// 0：可丢弃 1：不可丢弃
+		//fmt.Println("pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp) ////开始请求的本地时间戳
+		//fmt.Println("pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence) ////客户请求序列，客户端维护
 		//model.ASK_TYPE
-		fmt.Println("pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)  /// 服务端请求类型
-		fmt.Println("pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack) /////默认为0
-		fmt.Println("pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)  ////过期时间  0：永不过期 >0:过期时间，以m_iSendTimeApp为基本
-		fmt.Println("pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)  /////0：成功 非0：失败
-		fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
-		fmt.Println("pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)  //// 同一请求次数
+		//fmt.Println("pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)  /// 服务端请求类型
+		//fmt.Println("pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack) /////默认为0
+		//fmt.Println("pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)  ////过期时间  0：永不过期 >0:过期时间，以m_iSendTimeApp为基本
+		//fmt.Println("pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)  /////0：成功 非0：失败
+		//fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
+		//fmt.Println("pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)  //// 同一请求次数
 
 		go CheckAndSend(key ,netPack.M_Net_Pack[key],syncType,clientIP,singleResult)
 
@@ -312,10 +312,10 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType uint32,clientIP strin
 			resentCount = resentCount + 1
 		}
 	}
-	tSendResult.FailCount = failedCount
-	tSendResult.SuccessCount = tSendResult.SendCount - failedCount
-	tSendResult.ReSendCount = resentCount
-	tSendResult.DiscardCount = discardCount
+	tSendResult.FailCount  		= failedCount
+	tSendResult.SuccessCount 	= tSendResult.SendCount - failedCount
+	tSendResult.ReSendCount 	= resentCount
+	tSendResult.DiscardCount 	= discardCount
 
 	result <- tSendResult
 }

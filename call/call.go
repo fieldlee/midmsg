@@ -148,13 +148,12 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		return
 	}else{
 		if tResult != nil {
-
+			fmt.Println("===============================================================")
+			fmt.Println(string(r.M_Net_Rsp))
 			//////// 是否将结果返回到客户端  服务器等  /0 无需回复, 1 回复到发送方, 2 回复到离线服务器
-
 			if sResult.MsgAckType  == 1 {
 				sResult.Result = r.M_Net_Rsp
 			}
-
 			sResult.Errinfo = nil
 			tResult <- sResult
 		}
@@ -163,8 +162,6 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	////////////////////超时处理
 	select {
 	case <-ctx.Done():
-
-		fmt.Println(ctx.Err()) // 超时处理
 
 		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
 			PutPoolRequest(callinfo)
