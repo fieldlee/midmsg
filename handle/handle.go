@@ -13,7 +13,8 @@ import (
 )
 
 func init()  {
-	JobQueue = make(chan HandleBody, utils.MaxQueue)
+
+
 }
 
 type MsgHandle struct {}
@@ -23,29 +24,26 @@ func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,
 	if err != nil {
 		return nil,err
 	}
-
 	out := make(chan *pb.NetRspInfo)
-	//err := make(chan error)
 	//// 发送body到队列
 	handleBody := HandleBody{
 		ClientIp:ipaddr,
 		M_Body:in.M_Body,
 		Type: model.CALL_CLIENT_SYNC,
 		Out: out,
-		//Err:err,
 	}
 
-
-	JobQueue <- handleBody
+	go func(handleBody HandleBody) {
+		JobQueue <- handleBody
+	}(handleBody)
 
 	for {
 		select {
-		case netrep := <-out:
-			return netrep,nil
-		//case errinfo := <-err:
-		//	return nil,errinfo
+		case _ = <-JobDone:
+			return <-handleBody.Out,nil
 		}
 	}
+
 }
 
 func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo, error) {
@@ -79,6 +77,7 @@ func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo
 }
 
 func AnzalyBodyHead(inbody []byte) error {
+
 	bodyHead := inbody[:32]
 	//包头标示  8
 	m_tag := bodyHead[:8]

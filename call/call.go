@@ -105,7 +105,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	}
 
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
-
+	fmt.Println("call client address:",caddr)
 	if sResult.SyncType == 1 { ///// 异步
 		/// 异步调用goroutine
 		go AsyncCallClient(callinfo)

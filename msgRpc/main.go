@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"io"
 	"log"
 	"midmsg/handle"
+	//"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
 	"net"
@@ -21,9 +21,13 @@ var (
 )
 
 func main()  {
-	fmt.Println(Port)
+
+	d := handle.NewDispatcher(utils.MaxWorker,handle.JobDone)
+	d.Run()
+
 	listener, err := net.Listen("tcp", Host+":"+Port)
 	if err != nil {
+		fmt.Println(err.Error())
 		log.Fatalln("faile listen at: " + Host + ":" + Port)
 	} else {
 		log.Println("server is listening at: " + Host + ":" + Port)
@@ -39,55 +43,50 @@ func main()  {
 
 func test(){
 	//启动多线程处理
-	fmt.Println("=================")
-	d := handle.NewDispatcher(utils.MaxWorker)
-	d.Run()
-	fmt.Println("=================")
-	t := &handle.MsgHandle{}
 	body := getbody()
-	for i:=0;i<1000000 ; i++ {
-		fmt.Println(i)
-		tbody := &pb.NetReqInfo{
-			M_Body:body,
+	t := &handle.MsgHandle{}
+
+	go func() {
+		for i:=0; i < 10000 ; i++ {
+			fmt.Println(i)
+			tbody := &pb.NetReqInfo{
+				M_Body:body,
+			}
+			rsp,err := t.Sync(context.TODO(),tbody)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			fmt.Println(rsp)
+			//handleBody := handle.HandleBody{
+			//	M_Body:body,
+			//}
+			//handle.JobQueue <- handleBody
 		}
-		rsp,err := t.Sync(context.TODO(),tbody)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		fmt.Println(rsp)
-	}
+
+		//for {
+		//	select {
+		//	case _ = <-JobDone:
+		//		fmt.Println("Done Job")
+		//	}
+		//}
+	}()
+
+
 }
 func getbody()[]byte{
-	bodyByte := []byte{}
-	fileName := "./1.txt"
+	fileName := "./2.txt"
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	if err != nil {
 		fmt.Println("Open file error!", err)
-		return bodyByte
+		return nil
 	}
 	defer file.Close()
 
 	buf := bufio.NewReader(file)
-
-	var i = 0
-	for {
-		line, err := buf.ReadBytes('\n')
-		if i == 1 {
-			line = line[:]
-			bodyByte = line
-			return bodyByte
-		}
-
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("File read ok!")
-				break
-			} else {
-				fmt.Println("Read file error!", err)
-				return bodyByte
-			}
-		}
-		i ++
+	bodyByte := make([]byte,110)
+	_,err = buf.Read(bodyByte)
+	if err != nil {
+		return nil
 	}
 	return bodyByte
 }

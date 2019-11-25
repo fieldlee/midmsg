@@ -1,14 +1,17 @@
 package handle
 
 import (
+	"fmt"
 	pb "midmsg/proto"
 )
 
-func NewWorker(workerPool chan chan HandleBody) Worker {
+func NewWorker(workerPool chan chan HandleBody, jobDone chan struct{}) Worker {
 	return Worker{
 		WorkerPool: workerPool,
+		JobDone:    jobDone,
 		JobChannel: make(chan HandleBody),
-		quit:       make(chan bool)}
+		quit:       make(chan bool),
+	}
 }
 
 func (w Worker) Start() {
@@ -22,28 +25,30 @@ func (w Worker) Start() {
 				// 解析头文件
 				err := AnzalyBodyHead(body.M_Body)
 				if err != nil {
+					fmt.Println(err.Error())
 					pbRespinfo := &pb.NetRspInfo{
 						M_Err:[]byte(err.Error()),
 					}
-					body.Out <- pbRespinfo
+					go func(info *pb.NetRspInfo) {
+						body.Out <- info
+					}(pbRespinfo)
+				}else{ ///////// 校验package head 完成后 校验package 内容
+					rspInfo,err := AnzalyBody(body.M_Body,uint32(body.Type),body.ClientIp)
+					if err != nil {
+						pbRespinfo := &pb.NetRspInfo{
+							M_Err:[]byte(err.Error()),
+						}
+						go func(info *pb.NetRspInfo) {
+							body.Out <- info
+						}(pbRespinfo)
+						//return
+					}
+					go func(info *pb.NetRspInfo) {
+						body.Out <- info
+					}(rspInfo)
 				}
-				rspInfo,err := AnzalyBody(body.M_Body,uint32(body.Type),body.ClientIp)
 
-				if err != nil {
-					pbRespinfo := &pb.NetRspInfo{
-						M_Err:[]byte(err.Error()),
-					}
-					body.Out <- pbRespinfo
-				}
-				body.Out <- rspInfo
-				/////同步
-				//if body.Type == model.CALL_CLIENT_SYNC {
-				//
-				//}
-				/////异步
-				//if body.Type == model.CALL_CLIENT_ASYNC {
-				//	body.Err <- nil
-				//}
+				w.JobDone <- struct{}{}
 
 			case <-w.quit:
 				// we have received a signal to stop

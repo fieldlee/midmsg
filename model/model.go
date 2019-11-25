@@ -73,7 +73,7 @@ var (
 	IOS_mobile				CLIENT_TYPE		= 1				//请求来自苹果手机
 	Android_mobilewindow_pc	CLIENT_TYPE		= 3				//请求来自安卓手机
 	Web_side				CLIENT_TYPE		= 4				//请求来自WEB端
-	ClientTypeMax			CLIENT_TYPE		= 5				//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
+	ClientTypeMax			CLIENT_TYPE		= 6				//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
 type COMPRESS_TYPE int16
 var (
