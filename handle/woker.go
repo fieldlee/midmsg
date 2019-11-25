@@ -23,7 +23,7 @@ func (w Worker) Start() {
 			case body := <-w.JobChannel:
 				// we have received a work request.
 				// 解析头文件
-				err := AnzalyBodyHead(body.M_Body)
+				err := AnzalyBodyHead(body.MBody)
 				if err != nil {
 					fmt.Println(err.Error())
 					pbRespinfo := &pb.NetRspInfo{
@@ -33,7 +33,7 @@ func (w Worker) Start() {
 						body.Out <- info
 					}(pbRespinfo)
 				}else{ ///////// 校验package head 完成后 校验package 内容
-					rspInfo,err := AnzalyBody(body.M_Body,uint32(body.Type),body.ClientIp)
+					rspInfo,err := AnzalyBody(body.MBody,uint32(body.Type),body.ClientIp)
 					if err != nil {
 						pbRespinfo := &pb.NetRspInfo{
 							M_Err:[]byte(err.Error()),

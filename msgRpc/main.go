@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"log"
 	"midmsg/handle"
+	"midmsg/log"
 	//"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
@@ -28,16 +28,17 @@ func main()  {
 	listener, err := net.Listen("tcp", Host+":"+Port)
 	if err != nil {
 		fmt.Println(err.Error())
-		log.Fatalln("faile listen at: " + Host + ":" + Port)
+		log.Fatal("faile listen at: " + Host + ":" + Port)
+
 	} else {
-		log.Println("server is listening at: " + Host + ":" + Port)
+		log.Info("server is listening at: " + Host + ":" + Port)
 	}
 	rpcServer := grpc.NewServer()
 	pb.RegisterMidServiceServer(rpcServer, &handle.MsgHandle{})
 	reflection.Register(rpcServer)
 	//test()
 	if err = rpcServer.Serve(listener); err != nil {
-		log.Fatalln("faile serve at: " + Host + ":" + Port)
+		log.Fatal("faile serve at: " + Host + ":" + Port)
 	}
 }
 
@@ -54,9 +55,9 @@ func test(){
 			}
 			rsp,err := t.Sync(context.TODO(),tbody)
 			if err != nil {
-				fmt.Println(err.Error())
+				log.Error(err.Error())
 			}
-			fmt.Println(rsp)
+			log.Info(rsp)
 			//handleBody := handle.HandleBody{
 			//	M_Body:body,
 			//}
@@ -77,7 +78,7 @@ func getbody()[]byte{
 	fileName := "./2.txt"
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	if err != nil {
-		fmt.Println("Open file error!", err)
+		log.Error(err.Error())
 		return nil
 	}
 	defer file.Close()

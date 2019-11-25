@@ -1,18 +1,17 @@
 package handle
 
 import (
-
+	"fmt"
 	"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
 )
 
 type HandleBody struct {
-	M_Body 		[]byte
+	MBody 		[]byte
 	Type   		model.CALL_CLIENT_TYPE
 	ClientIp 	string
 	Out    		chan *pb.NetRspInfo
-	Err    		chan error
 }
 
 type Dispatcher struct {
@@ -39,12 +38,12 @@ func NewDispatcher(maxWorkers uint32,jobDone chan struct{}) *Dispatcher {
 }
 
 func (d *Dispatcher) Run() {
+	fmt.Println("Worker queue dispatcher started...")
 	// starting n number of workers
 	for i := 0; i < int(d.MaxWork); i++ {
 		worker := NewWorker(d.WorkerPool,d.JobDone)
 		worker.Start()
 	}
-
 	go d.dispatch()
 }
 

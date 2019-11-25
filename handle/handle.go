@@ -28,7 +28,7 @@ func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,
 	//// 发送body到队列
 	handleBody := HandleBody{
 		ClientIp:ipaddr,
-		M_Body:in.M_Body,
+		MBody:in.M_Body,
 		Type: model.CALL_CLIENT_SYNC,
 		Out: out,
 	}
@@ -53,25 +53,22 @@ func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo
 	}
 
 	out := make(chan *pb.NetRspInfo)
-	//err := make(chan error)
 	//// 发送body到队列
 	handleBody := HandleBody{
 		ClientIp:ipaddr,
-		M_Body:in.M_Body,
+		MBody:in.M_Body,
 		Type: model.CALL_CLIENT_ASYNC,
 		Out: out,
-		//Err:err,
 	}
 
-	JobQueue <- handleBody
+	go func(handleBody HandleBody) {
+		JobQueue <- handleBody
+	}(handleBody)
 
-	// 异步处理只处理错误信息
 	for {
 		select {
-		case netrep := <-out:
-			return netrep,nil
-			//case errinfo := <-err:
-			//	return nil,errinfo
+		case _ = <-JobDone:
+			return <-handleBody.Out,nil
 		}
 	}
 }

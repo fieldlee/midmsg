@@ -48,9 +48,6 @@ func TestAnzalyBodyHead(t *testing.T) {
 
 
 func TestAnzalyBody(t *testing.T) {
-	b := []byte{13,10}
-	fmt.Println(string(b))
-
 	fileName := "../2.txt"
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	if err != nil {
@@ -59,13 +56,6 @@ func TestAnzalyBody(t *testing.T) {
 	}
 	defer file.Close()
 
-	stat, err := file.Stat()
-	if err != nil {
-		panic(err)
-	}
-
-	var size = stat.Size()
-	fmt.Println("file size=", size)
 
 	buf := bufio.NewReader(file)
 	bodyByte := make([]byte,110)

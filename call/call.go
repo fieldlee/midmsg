@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
+	"midmsg/log"
 	"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
@@ -57,7 +58,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 	if callinfo.Timeout > time.Second *0 {
 		select {
 		case <-ctx.Done():
-			fmt.Println(ctx.Err()) // 超时处理
+			log.Error(ctx.Err()) // 超时处理
 			sResult.IsTimeOut = true
 			if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
 				sResult.IsResend = true
