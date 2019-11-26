@@ -1,7 +1,7 @@
 package handle
 
 import (
-	"fmt"
+	"midmsg/log"
 	pb "midmsg/proto"
 )
 
@@ -25,7 +25,9 @@ func (w Worker) Start() {
 				// 解析头文件
 				err := AnzalyBodyHead(body.MBody)
 				if err != nil {
-					fmt.Println(err.Error())
+					log.ErrorWithFields(map[string]interface{}{
+						"func":"Worker.start",
+					},err.Error())
 					pbRespinfo := &pb.NetRspInfo{
 						M_Err:[]byte(err.Error()),
 					}
@@ -41,7 +43,6 @@ func (w Worker) Start() {
 						go func(info *pb.NetRspInfo) {
 							body.Out <- info
 						}(pbRespinfo)
-						//return
 					}
 					go func(info *pb.NetRspInfo) {
 						body.Out <- info

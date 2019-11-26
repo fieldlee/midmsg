@@ -31,8 +31,7 @@ func main()  {
 
 	listener, err := net.Listen("tcp", Host+":"+Port)
 	if err != nil {
-		log.Fatal("faile listen at: " + Host + ":" + Port)
-
+		log.Fatal("failed listen at: " + Host + ":" + Port)
 	} else {
 		log.Info("server is listening at: " + Host + ":" + Port)
 	}
@@ -41,7 +40,7 @@ func main()  {
 	reflection.Register(rpcServer)
 	//test()
 	if err = rpcServer.Serve(listener); err != nil {
-		log.Fatal("faile serve at: " + Host + ":" + Port)
+		log.Fatal("failed serve at: " + Host + ":" + Port)
 	}
 }
 

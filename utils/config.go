@@ -2,7 +2,7 @@ package utils
 
 import (
 	"github.com/spf13/viper"
-	"log"
+	"midmsg/log"
 	"reflect"
 )
 var (
@@ -11,6 +11,7 @@ var (
 	Port uint32
 	ClientPort uint32
 	Services map[string]interface{}
+	SubScribe map[string]interface{}
 	MaxQueue uint32
 	MaxWorker uint32
 )
@@ -34,6 +35,10 @@ func InitConfig () *Config {
 }
 
 func init()  {
+	ReloadConfig()
+}
+
+func ReloadConfig(){
 	Con = InitConfig()
 	Address = GetMidAddress()
 	Port = GetMidPort()
@@ -41,6 +46,7 @@ func init()  {
 	Services = GetServices()
 	MaxWorker = GetMaxWorker()
 	MaxQueue = GetMaxQueue()
+	SubScribe = GetSubscribe()
 }
 
 func GetMidAddress()string{
@@ -70,11 +76,34 @@ func GetServices()map[string]interface{}{
 
 }
 
+func GetSubscribe()map[string]interface{}{
+	//serviceMap := make(map[string]string)
+	subscribe := Con.V.GetStringMap("subscribe")
+	return subscribe
+
+}
+
 func GetServiceByKey(key string)map[string]interface{}{
 	for k , v := range Services{
 		if k == key {
 			if reflect.TypeOf(v).Kind() == reflect.Map {
 				return v.(map[string]interface{})
+			}
+		}
+	}
+	return nil
+}
+
+func GetSubscribeByKey(key string)[]interface{}{
+	for k,v := range SubScribe{
+		if k == key {
+			log.Info(v)
+			if reflect.TypeOf(v).Kind() == reflect.Map {
+				SubMap := v.(map[string]interface{})
+				addrs := SubMap["subaddrs"]
+				if reflect.TypeOf(addrs).Kind() == reflect.Slice {
+					return addrs.([]interface{})
+				}
 			}
 		}
 	}

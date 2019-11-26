@@ -3,19 +3,16 @@ package utils
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/des"
 	"encoding/binary"
 	"fmt"
-	"context"
 	"google.golang.org/grpc/peer"
 	"io/ioutil"
 	"midmsg/model"
 	"net"
-	"runtime"
-	"strconv"
-	"strings"
 )
 
 func ClearBytes(origin []byte)[]byte{
@@ -83,22 +80,22 @@ func UnzipBytes(zip []byte)[]byte{
 	}
 	return undatas
 }
-
-func Goid() int {
-	defer func()  {
-		if err := recover(); err != nil {
-			fmt.Println("panic recover:panic info:%v", err)        }
-	}()
-
-	var buf [64]byte
-	n := runtime.Stack(buf[:], false)
-	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
-	id, err := strconv.Atoi(idField)
-	if err != nil {
-		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
-	}
-	return id
-}
+//
+//func Goid() int {
+//	defer func()  {
+//		if err := recover(); err != nil {
+//			fmt.Println("panic recover:panic info:%v", err)        }
+//	}()
+//
+//	var buf [64]byte
+//	n := runtime.Stack(buf[:], false)
+//	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+//	id, err := strconv.Atoi(idField)
+//	if err != nil {
+//		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+//	}
+//	return id
+//}
 
 func Decrypt(b []byte,encrptType model.ENCRPTION_TYPE)[]byte{
 	if encrptType == model.Encryption_AES{
