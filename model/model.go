@@ -12,7 +12,7 @@ type CallInfo struct {
 	MsgType 		int32
 	MsgAckType 		int32
 	IsDiscard       bool
-	SyncType 		uint32
+	SyncType 		CALL_CLIENT_TYPE
 	Address 		string
 	Port 			string
 	Service 		string
@@ -32,6 +32,7 @@ var (
 	ErrAskType = errors.New("errasktype","the ask type error",40008)
 	ErrMsgType = errors.New("errmsgtype","the message type error",40009)
 	ErrSendCount = errors.New("errsendcount","the send count must more than zero",40010)
+	ErrGotService = errors.New("errgetsubscribe","not got any subscribe follow",40011)
 )
 
 type ASK_TYPE int32
@@ -98,7 +99,7 @@ var (
 	DataFormatMax			DATAFORMAT_TYPE		= 1			//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
 
-type CALL_CLIENT_TYPE uint8
+type CALL_CLIENT_TYPE uint32
 var (
 	CALL_CLIENT_SYNC 	  CALL_CLIENT_TYPE = 0
 	CALL_CLIENT_ASYNC     CALL_CLIENT_TYPE = 1

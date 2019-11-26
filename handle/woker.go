@@ -2,6 +2,7 @@ package handle
 
 import (
 	"midmsg/log"
+	"midmsg/model"
 	pb "midmsg/proto"
 )
 
@@ -35,18 +36,34 @@ func (w Worker) Start() {
 						body.Out <- info
 					}(pbRespinfo)
 				}else{ ///////// 校验package head 完成后 校验package 内容
-					rspInfo,err := AnzalyBody(body.MBody,uint32(body.Type),body.ClientIp)
-					if err != nil {
-						pbRespinfo := &pb.NetRspInfo{
-							M_Err:[]byte(err.Error()),
+					if body.Type == model.CALL_CLIENT_PUBLISH {  /// 订阅消息发送
+						rspInfo,err := PublishBody(body.MBody,body.Service,body.ClientIp)
+						if err != nil {
+							pbRespinfo := &pb.NetRspInfo{
+								M_Err:[]byte(err.Error()),
+							}
+							go func(info *pb.NetRspInfo) {
+								body.Out <- info
+							}(pbRespinfo)
 						}
 						go func(info *pb.NetRspInfo) {
 							body.Out <- info
-						}(pbRespinfo)
+						}(rspInfo)
+					}else{
+						rspInfo,err := AnzalyBody(body.MBody,body.Type,body.ClientIp)
+						if err != nil {
+							pbRespinfo := &pb.NetRspInfo{
+								M_Err:[]byte(err.Error()),
+							}
+							go func(info *pb.NetRspInfo) {
+								body.Out <- info
+							}(pbRespinfo)
+						}
+						go func(info *pb.NetRspInfo) {
+							body.Out <- info
+						}(rspInfo)
 					}
-					go func(info *pb.NetRspInfo) {
-						body.Out <- info
-					}(rspInfo)
+
 				}
 
 				w.JobDone <- struct{}{}

@@ -34,7 +34,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 		SendTimeApp:callinfo.SendTimeApp,
 		MsgType:	callinfo.MsgType,
 		MsgAckType:	callinfo.MsgAckType,
-		SyncType:	callinfo.SyncType,
+		SyncType:	uint32(callinfo.SyncType),
 		IsTimeOut:false,
 		IsDisCard:false,
 		IsResend:false,
@@ -95,7 +95,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		SendTimeApp:callinfo.SendTimeApp,
 		MsgType:callinfo.MsgType,
 		MsgAckType:callinfo.MsgAckType,
-		SyncType:callinfo.SyncType,
+		SyncType:uint32(callinfo.SyncType),
 		IsTimeOut:false,
 		IsDisCard:false,
 		IsResend:false,
@@ -104,6 +104,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	}
 
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
+
 	log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client address:",caddr)
 
 	if sResult.SyncType == uint32(model.CALL_CLIENT_ASYNC) { ///// 异步
@@ -136,7 +137,6 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	}else{
 		ctx = context.Background()
 	}
-
 	//////////////////////////////////////////////同步
 	r, err := c.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
 
@@ -148,9 +148,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		return
 	}else{
 		if tResult != nil {
-
 			log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client return value:",string(r.M_Net_Rsp))
-
 			//////// 是否将结果返回到客户端  服务器等  /0 无需回复, 1 回复到发送方, 2 回复到离线服务器
 			if sResult.MsgAckType  == 1 {
 				sResult.Result = r.M_Net_Rsp
@@ -163,7 +161,6 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	////////////////////超时处理
 	select {
 	case <-ctx.Done():
-
 		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
 			PutPoolRequest(callinfo)
 			//////////丢弃了
@@ -176,14 +173,12 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 				sResult.IsDisCard = true
 			}
 		}
-
 		if tResult != nil {
 			sResult.Result = nil
 			sResult.IsTimeOut = true
 			sResult.Errinfo = []byte(ctx.Err().Error())
 			tResult <- sResult
 		}
-
 		return
 	}
 	if tResult != nil {
@@ -192,6 +187,5 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		sResult.Errinfo = nil
 		tResult <- sResult
 	}
-
 	return
 }
