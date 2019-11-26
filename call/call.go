@@ -60,7 +60,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 			sResult.IsTimeOut = true
 			if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
 				sResult.IsResend = true
-				PutPoolRequest(&callinfo)
+				PutPoolRequest(callinfo)
 			}else{
 				sResult.IsDisCard = true
 			}
@@ -80,23 +80,25 @@ func AsyncCallClient(callinfo model.CallInfo){
 	var ctxClient context.Context
 	ctxClient = context.Background()
 	_, err = client.AsyncCall(ctxClient,&sResult)
-	if err != nil {
-		log.ErrorWithFields(map[string]interface{}{
-			"func":"AsyncCallClient",
-		},"AsyncCallClient Err:",err.Error())
+	//if err != nil {
+	//	log.ErrorWithFields(map[string]interface{}{
+	//		"func":"AsyncCallClient",
+	//	},"AsyncCallClient Err:",err.Error())
 
 		////////////将发送失败的异步请求的处理结果，缓存起来
 		returninfo := model.AsyncReturnInfo{
 			ClientIP:callinfo.ClientIP,
 			SResult:sResult,
 		}
-		PutPoolAsyncReturn(&returninfo)
+		count++
+		log.Trace("PutPoolAsyncReturn count:",count)
+		AsyncReturn.PutPoolAsyncReturn(returninfo)
 
-	}
+	//}
 	return
 }
 ///////////// 异步处理结果失败后，再发起call
-func AsyncReturnClient(sresult *model.AsyncReturnInfo){
+func AsyncReturnClient(sresult model.AsyncReturnInfo){
 	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
 	log.Trace("callinfo.ClientIP:",sresult.ClientIP,"utils.ClientPort:",utils.ClientPort)
 	clientAddr := fmt.Sprintf("%v:%d",sresult.ClientIP,utils.ClientPort)
@@ -116,7 +118,7 @@ func AsyncReturnClient(sresult *model.AsyncReturnInfo){
 		},"AsyncCallClient Err:",err.Error())
 
 		////////////将发送失败的异步请求的处理结果，缓存起来
-		PutPoolAsyncReturn(sresult)
+		go AsyncReturn.PutPoolAsyncReturn(sresult)
 	}
 	return
 }
@@ -198,7 +200,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	select {
 	case <-ctx.Done():
 		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
-			PutPoolRequest(&callinfo)
+			PutPoolRequest(callinfo)
 			//////////丢弃了
 			if tResult != nil {
 				sResult.IsResend = true

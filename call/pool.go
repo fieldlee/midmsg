@@ -1,125 +1,78 @@
 package call
 
 import (
-	"fmt"
 	"midmsg/model"
 	"sync"
 	"time"
 )
 
+var count = 0
+var TimeoutRequest CallInfoPool
+var AsyncReturn    AsyncReturnPool
 
-var TimeoutRequest sync.Pool
-var AsyncReturn sync.Pool
+type CallInfoPool struct {
+	mux sync.Mutex
+	CallInfoList []model.CallInfo
+}
+
+type AsyncReturnPool struct {
+	mux sync.Mutex
+	AsyncReturnPool []model.AsyncReturnInfo
+}
 
 func init()  {
-	TimeoutRequest = sync.Pool{
-		New: func() interface{} {
-			b := model.CallInfo{}
-			return &b
-		},
+	TimeoutRequest = CallInfoPool{
+		CallInfoList:make([]model.CallInfo,0),
 	}
-
-	AsyncReturn = sync.Pool{
-		New: func() interface{} {
-			b := model.AsyncReturnInfo{}
-			return &b
-		},
+	AsyncReturn = AsyncReturnPool{
+		AsyncReturnPool:make([]model.AsyncReturnInfo,0),
 	}
 }
 
-func TestOtRequestPut(){
-
-	t := model.CallInfo{
-		Address:"192.168.0.1",
-		Port:"5555",
-		Timeout:time.Second*0,
-		Service:"time.service",
-		MsgBody:[]byte("time.service1"),
-	}
-	t1 := model.CallInfo{
-		Address:"192.168.0.2",
-		Port:"5555",
-		Timeout:time.Second*0,
-		Service:"time.service",
-		MsgBody:[]byte("time.service2"),
-	}
-	t2 := model.CallInfo{
-		Address:"192.168.0.3",
-		Port:"5555",
-		Timeout:time.Second*0,
-		Service:"time.service",
-		MsgBody:[]byte("time.service3"),
-	}
-	TimeoutRequest.Put(&t2)
-	TimeoutRequest.Put(&t1)
-	TimeoutRequest.Put(&t)
-
-
-	TestOtRequestGet()
-}
-
-func TestOtRequestGet(){
-	for{
-		rq := TimeoutRequest.Get().(*model.CallInfo)
-		if rq == nil {
-			fmt.Println("rq == nil")
-			return
-		}else{
-			//fmt.Println("rq.InBody:",rq.InBody==nil,"rq.Address:",rq.Address)
-			if rq.MsgBody != nil && rq.Address != "" && rq.Port != "" {
-				fmt.Println("取到了")
-				fmt.Println("rq.InBody:",string(rq.MsgBody),"rq.Address:",rq.Address)
-			}else{
-				return
-			}
-		}
-	}
-}
 
 func CallPoolRequest(){
-	for{
-		rq := TimeoutRequest.Get().(*model.CallInfo)
-		if rq == nil {
-			return
-		}else{
-			if rq.MsgBody != nil && rq.Address != "" && rq.Port != "" {
-				CallClient(*rq,nil,nil)
-			}else{
-				return
-			}
-		}
+	TimeoutRequest.mux.Unlock()
+
+	list := TimeoutRequest.CallInfoList
+	TimeoutRequest.CallInfoList = make([]model.CallInfo,0)
+	TimeoutRequest.mux.Lock()
+
+	for _,v := range list {
+		CallClient(v,nil,nil)
 	}
 }
 
-func CallPoolAsyncReturn(){
-	for{
-		rq := AsyncReturn.Get().(*model.AsyncReturnInfo)
-		if rq == nil {
-			return
-		}else{
-			if  rq.ClientIP != "" {
-				AsyncReturnClient(rq)
-			}else{
-				return
-			}
-		}
+func (p *AsyncReturnPool) CallPoolAsyncReturn(){
+	p.mux.Lock()
+	list := p.AsyncReturnPool
+	p.AsyncReturnPool = make([]model.AsyncReturnInfo,0)
+	p.mux.Unlock()
+
+	for _,v := range list {
+		AsyncReturnClient(v)
 	}
 }
 
-func PutPoolRequest(callinfo *model.CallInfo){
-	TimeoutRequest.Put(callinfo)
+func PutPoolRequest(callinfo model.CallInfo){
+	TimeoutRequest.mux.Unlock()
+	list := TimeoutRequest.CallInfoList
+	TimeoutRequest.CallInfoList = append(list,callinfo)
+	TimeoutRequest.mux.Lock()
 }
 
-func PutPoolAsyncReturn(returninfo *model.AsyncReturnInfo){
-	AsyncReturn.Put(returninfo)
+func (p *AsyncReturnPool)PutPoolAsyncReturn(returninfo model.AsyncReturnInfo){
+	p.mux.Lock()
+	list := p.AsyncReturnPool
+	p.AsyncReturnPool = append(list,returninfo)
+	p.mux.Unlock()
 }
 
 func TimerCallPool(){
 	for  {
 		select {
-		case <- time.After(time.Second * 200):
+		case <- time.After(time.Second * 20):
 			CallPoolRequest()
-			CallPoolAsyncReturn()
+			AsyncReturn.CallPoolAsyncReturn()
 		}
 	}
 }
