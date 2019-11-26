@@ -225,35 +225,34 @@ func AnzalyBody(inbody []byte,syncType model.CALL_CLIENT_TYPE,clientIP string) (
 
 	singleResult := make(chan pb.SendResultInfo,len(netPack.M_Net_Pack))
 
-	for key,pack := range netPack.M_Net_Pack {
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"net pack key:",key)
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType)
-		//model.MSG_TYPE_
-		//fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)
-		//fmt.Println("pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)  ///请求可否丢弃// 0：可丢弃 1：不可丢弃
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)
-		//fmt.Println("pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp) ////开始请求的本地时间戳
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp)
-		//fmt.Println("pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence) ////客户请求序列，客户端维护
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence)
-		//model.ASK_TYPE
-		//fmt.Println("pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)  /// 服务端请求类型
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)
-		//fmt.Println("pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack) /////默认为0
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack)
-		//fmt.Println("pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)  ////过期时间  0：永不过期 >0:过期时间，以m_iSendTimeApp为基本
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)
-		//fmt.Println("pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)  /////0：成功 非0：失败
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)
-		//fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
-		log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)
+	for key,_ := range netPack.M_Net_Pack {
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"net pack key:",key)
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType)
+		////model.MSG_TYPE_
+		////fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)
+		////fmt.Println("pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)  ///请求可否丢弃// 0：可丢弃 1：不可丢弃
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)
+		////fmt.Println("pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp) ////开始请求的本地时间戳
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp)
+		////fmt.Println("pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence) ////客户请求序列，客户端维护
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence)
+		////model.ASK_TYPE
+		////fmt.Println("pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)  /// 服务端请求类型
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)
+		////fmt.Println("pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack) /////默认为0
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack)
+		////fmt.Println("pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)  ////过期时间  0：永不过期 >0:过期时间，以m_iSendTimeApp为基本
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)
+		////fmt.Println("pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)  /////0：成功 非0：失败
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)
+		////fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
+		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)
 		//fmt.Println("pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)  //// 同一请求次数
 		go CheckAndSend(key ,netPack.M_Net_Pack[key],syncType,clientIP,singleResult)
 	}
 
-	close(singleResult)
-
+	defer close(singleResult)
 	/////读取返回值
 	for i := 0;i<len(netPack.M_Net_Pack);i++{
 		tmpResult := <- singleResult
@@ -337,12 +336,14 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYP
 	}
 	wait.Wait()
 
-	resultList := make([]pb.SingleResultInfo,0)
+	resultList := map[uint32]*pb.SingleResultInfo{}
 	failedCount := int32(0)
 	discardCount := int32(0)
 	resentCount := int32(0)
-	for tmpRsult := range callResult{
-		resultList = append(resultList,tmpRsult)
+
+	for i := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
+		tmpRsult := <- callResult
+		resultList[uint32(i)] = &tmpRsult
 		if tmpRsult.Errinfo != nil {
 			failedCount = failedCount + 1
 		}
@@ -353,10 +354,12 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYP
 			resentCount = resentCount + 1
 		}
 	}
+
 	tSendResult.FailCount  		= failedCount
-	tSendResult.SuccessCount 	= tSendResult.SendCount - failedCount
+	tSendResult.SuccessCount 	= netpack.M_MsgBody.MSSendCount - failedCount
 	tSendResult.ReSendCount 	= resentCount
 	tSendResult.DiscardCount 	= discardCount
+	tSendResult.ResultList      = resultList
 
 	result <- tSendResult
 }

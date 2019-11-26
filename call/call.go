@@ -13,6 +13,7 @@ import (
 )
 
 func AsyncCallClient(callinfo model.CallInfo){
+	log.Trace("AsyncCallClient")
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
@@ -68,6 +69,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 	}
 
 	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
+	log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
 	clientAddr := fmt.Sprintf("%v:%d",callinfo.ClientIP,utils.ClientPort)
 	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	if err != nil {
@@ -110,7 +112,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	if sResult.SyncType == uint32(model.CALL_CLIENT_ASYNC) { ///// 异步
 		/// 异步调用goroutine
 		go AsyncCallClient(callinfo)
-
+		log.Trace("AsyncCallClient:========================")
 		if tResult != nil {
 			sResult.Errinfo = nil
 			tResult <- sResult
