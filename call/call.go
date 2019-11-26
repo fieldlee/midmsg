@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 )
-
+////////// 异步调用客户端的call接口
 func AsyncCallClient(callinfo model.CallInfo){
 	log.Trace("AsyncCallClient")
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
@@ -43,7 +43,6 @@ func AsyncCallClient(callinfo model.CallInfo){
 		Result:nil,
 	}
 
-
 	r, err := c.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
 
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
@@ -61,7 +60,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 			sResult.IsTimeOut = true
 			if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
 				sResult.IsResend = true
-				PutPoolRequest(callinfo)
+				PutPoolRequest(&callinfo)
 			}else{
 				sResult.IsDisCard = true
 			}
@@ -82,9 +81,44 @@ func AsyncCallClient(callinfo model.CallInfo){
 	ctxClient = context.Background()
 	_, err = client.AsyncCall(ctxClient,&sResult)
 	if err != nil {
+		log.ErrorWithFields(map[string]interface{}{
+			"func":"AsyncCallClient",
+		},"AsyncCallClient Err:",err.Error())
+
+		////////////将发送失败的异步请求的处理结果，缓存起来
+		returninfo := model.AsyncReturnInfo{
+			ClientIP:callinfo.ClientIP,
+			SResult:sResult,
+		}
+		PutPoolAsyncReturn(&returninfo)
+
+	}
+	return
+}
+///////////// 异步处理结果失败后，再发起call
+func AsyncReturnClient(sresult *model.AsyncReturnInfo){
+	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
+	log.Trace("callinfo.ClientIP:",sresult.ClientIP,"utils.ClientPort:",utils.ClientPort)
+	clientAddr := fmt.Sprintf("%v:%d",sresult.ClientIP,utils.ClientPort)
+	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
+	if err != nil {
 		return
 	}
+	defer clientconn.Close()
 
+	client := pb.NewClientServiceClient(clientconn)
+	var ctxClient context.Context
+	ctxClient = context.Background()
+	_, err = client.AsyncCall(ctxClient,&sresult.SResult)
+	if err != nil {
+		log.ErrorWithFields(map[string]interface{}{
+			"func":"AsyncCallClient",
+		},"AsyncCallClient Err:",err.Error())
+
+		////////////将发送失败的异步请求的处理结果，缓存起来
+		PutPoolAsyncReturn(sresult)
+	}
+	return
 }
 
 func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait *sync.WaitGroup){
@@ -163,8 +197,8 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	////////////////////超时处理
 	select {
 	case <-ctx.Done():
-		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
-			PutPoolRequest(callinfo)
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+			PutPoolRequest(&callinfo)
 			//////////丢弃了
 			if tResult != nil {
 				sResult.IsResend = true

@@ -9,12 +9,19 @@ import (
 
 
 var TimeoutRequest sync.Pool
-
+var AsyncReturn sync.Pool
 
 func init()  {
 	TimeoutRequest = sync.Pool{
 		New: func() interface{} {
 			b := model.CallInfo{}
+			return &b
+		},
+	}
+
+	AsyncReturn = sync.Pool{
+		New: func() interface{} {
+			b := model.AsyncReturnInfo{}
 			return &b
 		},
 	}
@@ -84,8 +91,27 @@ func CallPoolRequest(){
 	}
 }
 
-func PutPoolRequest(callinfo model.CallInfo){
-	TimeoutRequest.Put(&callinfo)
+func CallPoolAsyncReturn(){
+	for{
+		rq := AsyncReturn.Get().(*model.AsyncReturnInfo)
+		if rq == nil {
+			return
+		}else{
+			if  rq.ClientIP != "" {
+				AsyncReturnClient(rq)
+			}else{
+				return
+			}
+		}
+	}
+}
+
+func PutPoolRequest(callinfo *model.CallInfo){
+	TimeoutRequest.Put(callinfo)
+}
+
+func PutPoolAsyncReturn(returninfo *model.AsyncReturnInfo){
+	AsyncReturn.Put(returninfo)
 }
 
 func TimerCallPool(){
@@ -93,6 +119,7 @@ func TimerCallPool(){
 		select {
 		case <- time.After(time.Second * 200):
 			CallPoolRequest()
+			CallPoolAsyncReturn()
 		}
 	}
 }

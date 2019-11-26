@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/micro/go-micro/errors"
+	pb "midmsg/proto"
 	"time"
 )
 
@@ -19,6 +20,11 @@ type CallInfo struct {
 	ClientIP		string
 	Timeout 		time.Duration
 	MsgBody 		[]byte
+}
+
+type AsyncReturnInfo struct {
+	SResult 		pb.SingleResultInfo
+	ClientIP		string
 }
 
 var (
