@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"midmsg/model"
 	"net"
+	"strings"
 )
 
 func ClearBytes(origin []byte)[]byte{
@@ -185,5 +186,10 @@ func GetClietIP(ctx context.Context) (string, error) {
 	if pr.Addr == net.Addr(nil) {
 		return "", fmt.Errorf("getClientIP, peer.Addr is nil")
 	}
+
+	if strings.Contains(pr.Addr.String(),":"){
+		return strings.Split(pr.Addr.String(),":")[0],nil
+	}
+
 	return pr.Addr.String(), nil
 }
