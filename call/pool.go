@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-var count = 0
 var TimeoutRequest CallInfoPool
 var AsyncReturn    AsyncReturnPool
 

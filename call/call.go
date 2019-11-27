@@ -90,8 +90,6 @@ func AsyncCallClient(callinfo model.CallInfo){
 			ClientIP:callinfo.ClientIP,
 			SResult:sResult,
 		}
-		count++
-		log.Trace("PutPoolAsyncReturn count:",count)
 		AsyncReturn.PutPoolAsyncReturn(returninfo)
 	}
 
@@ -148,7 +146,6 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	if sResult.SyncType == uint32(model.CALL_CLIENT_ASYNC) { ///// 异步
 		/// 异步调用goroutine
 		go AsyncCallClient(callinfo)
-		log.Trace("AsyncCallClient:========================")
 		if tResult != nil {
 			sResult.Errinfo = nil
 			tResult <- sResult
