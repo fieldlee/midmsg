@@ -11,12 +11,12 @@ var TimeoutRequest CallInfoPool
 var AsyncReturn    AsyncReturnPool
 
 type CallInfoPool struct {
-	mux sync.Mutex
+	mux sync.RWMutex
 	CallInfoList []model.CallInfo
 }
 
 type AsyncReturnPool struct {
-	mux sync.Mutex
+	mux sync.RWMutex
 	AsyncReturnPool []model.AsyncReturnInfo
 }
 
@@ -30,12 +30,12 @@ func init()  {
 }
 
 
-func CallPoolRequest(){
-	TimeoutRequest.mux.Unlock()
+func (c *CallInfoPool)CallPoolRequest(){
 
-	list := TimeoutRequest.CallInfoList
-	TimeoutRequest.CallInfoList = make([]model.CallInfo,0)
-	TimeoutRequest.mux.Lock()
+	c.mux.Lock()
+	list := c.CallInfoList
+	c.CallInfoList = make([]model.CallInfo,0)
+	c.mux.Unlock()
 
 	for _,v := range list {
 		CallClient(v,nil,nil)
@@ -53,11 +53,11 @@ func (p *AsyncReturnPool) CallPoolAsyncReturn(){
 	}
 }
 
-func PutPoolRequest(callinfo model.CallInfo){
-	TimeoutRequest.mux.Unlock()
-	list := TimeoutRequest.CallInfoList
-	TimeoutRequest.CallInfoList = append(list,callinfo)
-	TimeoutRequest.mux.Lock()
+func (c *CallInfoPool)PutPoolRequest(callinfo model.CallInfo){
+	c.mux.Lock()
+	list := c.CallInfoList
+	c.CallInfoList = append(list,callinfo)
+	c.mux.Unlock()
 }
 
 func (p *AsyncReturnPool)PutPoolAsyncReturn(returninfo model.AsyncReturnInfo){
@@ -71,7 +71,7 @@ func TimerCallPool(){
 	for  {
 		select {
 		case <- time.After(time.Second * 20):
-			CallPoolRequest()
+			TimeoutRequest.CallPoolRequest()
 			AsyncReturn.CallPoolAsyncReturn()
 		}
 	}
