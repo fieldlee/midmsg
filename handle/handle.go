@@ -110,6 +110,17 @@ func (m *MsgHandle)Publish(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspIn
 	}
 }
 
+func CheckHaveHead(inbody []byte) bool{
+	body := inbody[32:]
+	netPack := pb.GJ_Net_Pack{}
+	errAll := proto.Unmarshal(inbody,&netPack)
+	errBak :=  proto.Unmarshal(body,&netPack)
+	if errAll==nil && errBak != nil {
+		return false
+	}
+	return true
+}
+
 func AnzalyBodyHead(inbody []byte) error {
 
 	bodyHead := inbody[:32]

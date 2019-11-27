@@ -6,6 +6,22 @@ import (
 	"time"
 )
 
+type HeadInfo struct {
+	Tag 		string 	//包头标示
+	Version 	int16	//数据版本
+	ClientType 	int16	//客户端类型
+	HeadLength 	int16	//包头长度
+	CompressWay uint8	//0表示没有压缩 1 zip
+	Encryption  uint8	//加密方   0表示没有加密 1 DES
+	Sig			uint8	//协议标记 0 TCP ,1 UDP
+	Format		uint8	//数据格式 dataFormat
+	NetFlag		uint8	//网络标记
+	Back1		uint8	//占位符
+	BufSize		uint32	//数据长度 ,该数据的长度和MsgBody的m_lBufSize是一样
+	UncompressedSize  uint32	//压缩前的长度
+	Back2		uint32	//备份数据
+
+}
 
 type CallInfo struct {
 	AskSequence 	uint64
