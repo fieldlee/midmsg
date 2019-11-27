@@ -10,6 +10,8 @@ import (
 	"midmsg/call"
 	"midmsg/handle"
 	"midmsg/log"
+	"runtime"
+
 	//"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
@@ -21,6 +23,10 @@ var (
 	Host = utils.Address
 	Port = fmt.Sprintf("%d",utils.Port)
 )
+
+func init()  {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+}
 
 func main()  {
 
