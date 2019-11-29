@@ -23,6 +23,7 @@ func (w Worker) Start() {
 			select {
 			case body := <-w.JobChannel:
 				// we have received a work request.
+				//log.Error("====================GoRoutineId:",utils.GetGID())
 				// 解析头文件
 				if headInfo,err := AnzalyBodyHead(body.MBody); err != nil {
 					log.ErrorWithFields(map[string]interface{}{

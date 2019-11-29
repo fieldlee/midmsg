@@ -10,6 +10,7 @@ import (
 	"midmsg/utils"
 	"sync"
 	"time"
+
 )
 ////////// 异步调用客户端的call接口
 func AsyncCallClient(callinfo model.CallInfo){
@@ -19,6 +20,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 	if err != nil {
 		return
 	}
+
 	defer conn.Close()
 	c := pb.NewClientServiceClient(conn)
 	var ctx context.Context
@@ -185,7 +187,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		return
 	}else{
 		if tResult != nil {
-			log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client return value:",string(r.M_Net_Rsp))
+			//log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client return value:",string(r.M_Net_Rsp))
 			//////// 是否将结果返回到客户端  服务器等  /0 无需回复, 1 回复到发送方, 2 回复到离线服务器
 			if sResult.MsgAckType  == 1 {
 				sResult.Result = r.M_Net_Rsp
