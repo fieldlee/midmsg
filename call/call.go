@@ -176,6 +176,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	r, err := c.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
 
 	if err != nil {
+		log.Error("======================**************err",err.Error())
 		if tResult != nil {
 			sResult.Errinfo = []byte(err.Error())
 			tResult <- sResult

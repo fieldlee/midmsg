@@ -14,6 +14,7 @@ import (
 	"midmsg/model"
 	"net"
 	"strings"
+	"unicode/utf8"
 )
 
 func ClearBytes(origin []byte)[]byte{
@@ -28,6 +29,32 @@ func ClearBytes(origin []byte)[]byte{
 	return tran
 }
 
+func JoinHeadAndBody(info model.HeadInfo,in []byte)[]byte{
+	tagByte := StringToBytes(info.Tag)
+	versionByte := Int16ToBytes(info.Version)
+	clientTypeByte := Int16ToBytes(info.ClientType)
+	headLengthByte := Int16ToBytes(info.HeadLength)
+	CompressWayBYte := Uint8ToBytes(info.CompressWay)
+	EncryptionBYte := Uint8ToBytes(info.Encryption)
+	SigBYte := Uint8ToBytes(info.Sig)
+	FormatBYte := Uint8ToBytes(info.Format)
+	NetFlagBYte := Uint8ToBytes(info.NetFlag)
+	Back1BYte := Uint8ToBytes(info.Back1)
+	BufSizeBYte := Int32ToBytes(info.BufSize)
+	UncompressedSizeByte := Int32ToBytes(info.UncompressedSize)
+	Back2Byte := Int32ToBytes(info.Back2)
+	return BytesJoin(tagByte,versionByte,clientTypeByte,headLengthByte,CompressWayBYte,EncryptionBYte,SigBYte,
+		FormatBYte,NetFlagBYte,Back1BYte,BufSizeBYte,UncompressedSizeByte,Back2Byte,in)
+}
+
+func BytesJoin(blist ...[]byte)[]byte{
+	bytesinfo := make([]byte,0)
+	for _,b := range blist  {
+		bytesinfo = append(bytesinfo,b...)
+	}
+	return bytesinfo
+}
+
 func BytesToString(b []byte)string{
 	nb := make([]byte,0)
 	for _,t := range b {
@@ -37,6 +64,48 @@ func BytesToString(b []byte)string{
 		}
 	}
 	return string(nb)
+}
+
+func StringToBytes(s string)[]byte{
+	b := []byte(s)
+	return b[:8]
+}
+
+
+func Int16ToBytes(n int16)[]byte{
+	var buffer bytes.Buffer
+	err := binary.Write(&buffer, binary.LittleEndian, n)
+	if err != nil {
+		return nil
+	}
+	return buffer.Bytes()[:2]
+}
+
+func Uint8ToBytes(n uint8)[]byte{
+	var buffer bytes.Buffer
+	err := binary.Write(&buffer, binary.LittleEndian, n)
+	if err != nil {
+		return nil
+	}
+	return buffer.Bytes()[:1]
+}
+
+func Uint32ToBytes(n uint32)[]byte{
+	var buffer bytes.Buffer
+	err := binary.Write(&buffer, binary.LittleEndian, n)
+	if err != nil {
+		return nil
+	}
+	return buffer.Bytes()[:4]
+}
+
+func Int32ToBytes(n int32)[]byte{
+	var buffer bytes.Buffer
+	err := binary.Write(&buffer, binary.LittleEndian, n)
+	if err != nil {
+		return nil
+	}
+	return buffer.Bytes()[:4]
 }
 
 //字节转换成整形
@@ -192,4 +261,20 @@ func GetClietIP(ctx context.Context) (string, error) {
 	}
 
 	return pr.Addr.String(), nil
+}
+
+func PrintCh(){
+	ch := "hello我爱你中国！"
+	for i,v := range ch {
+		// v is rune 类型
+		fmt.Printf("(%d %X)",i,v)
+	}
+	fmt.Println()
+}
+func BytesTOCh(b []byte){
+	for len(b)>0{
+		ch,s := utf8.DecodeRune(b)
+		fmt.Printf("%c",ch)
+		b = b[s:]
+	}
 }

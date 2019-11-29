@@ -5,6 +5,7 @@ import (
 	"midmsg/log"
 	"reflect"
 )
+
 var (
 	Con *Config
 	Address string
@@ -73,14 +74,12 @@ func GetServices()map[string]interface{}{
 	//serviceMap := make(map[string]string)
 	services := Con.V.GetStringMap("services")
 	return services
-
 }
 
 func GetSubscribe()map[string]interface{}{
 	//serviceMap := make(map[string]string)
 	subscribe := Con.V.GetStringMap("subscribe")
 	return subscribe
-
 }
 
 func GetServiceByKey(key string)map[string]interface{}{

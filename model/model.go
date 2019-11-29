@@ -17,9 +17,9 @@ type HeadInfo struct {
 	Format		uint8	//数据格式 dataFormat
 	NetFlag		uint8	//网络标记
 	Back1		uint8	//占位符
-	BufSize		uint32	//数据长度 ,该数据的长度和MsgBody的m_lBufSize是一样
-	UncompressedSize  uint32	//压缩前的长度
-	Back2		uint32	//备份数据
+	BufSize		int32	//数据长度 ,该数据的长度和MsgBody的m_lBufSize是一样
+	UncompressedSize  int32	//压缩前的长度
+	Back2		int32	//备份数据
 
 }
 
@@ -96,6 +96,7 @@ var (
 	IOS_mobile				CLIENT_TYPE		= 1				//请求来自苹果手机
 	Android_mobilewindow_pc	CLIENT_TYPE		= 3				//请求来自安卓手机
 	Web_side				CLIENT_TYPE		= 4				//请求来自WEB端
+	Mid_Msg_Type			CLIENT_TYPE		= 5				//中间件封装
 	ClientTypeMax			CLIENT_TYPE		= 6				//用于判断合法性预留，以后该枚举需扩展，则在该枚举值上面进行扩展
 )
 type COMPRESS_TYPE int16
