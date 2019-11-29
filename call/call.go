@@ -47,6 +47,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
 	if err != nil {
+		log.Error("======================**************err",err.Error())
 		sResult.Errinfo = []byte(err.Error())
 	}else{
 		sResult.Result = r.M_Net_Rsp
@@ -83,7 +84,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 	if err != nil {
 		log.ErrorWithFields(map[string]interface{}{
 			"func":"AsyncCallClient",
-		},"AsyncCallClient Err:",err.Error())
+		},"======================**************AsyncCallClient Err:",err.Error())
 
 		////////////将发送失败的异步请求的处理结果，缓存起来
 		returninfo := model.AsyncReturnInfo{
@@ -113,7 +114,7 @@ func AsyncReturnClient(sresult model.AsyncReturnInfo){
 	if err != nil {
 		log.ErrorWithFields(map[string]interface{}{
 			"func":"AsyncCallClient",
-		},"AsyncCallClient Err:",err.Error())
+		},"======================**************AsyncCallClient Err:",err.Error())
 
 		////////////将发送失败的异步请求的处理结果，缓存起来
 		go AsyncReturn.PutPoolAsyncReturn(sresult)

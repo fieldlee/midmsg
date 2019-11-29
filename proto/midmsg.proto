@@ -50,7 +50,7 @@ message SingleResultInfo  {
     uint64  SendTimeApp = 2;      // 客户端生成的时间序
     int32   MsgType     = 3;      // message 类型
     int32   MsgAckType  = 4;      // ack message 类型
-    uint32  SyncType    = 5;	 ///// 0 同步  1 异步
+    uint32  SyncType    = 5;	  ///// 0 同步  1 异步
  	bool    IsTimeOut   = 6;
     bool    IsDisCard   = 7;
     bool    IsResend    = 8;
@@ -58,11 +58,6 @@ message SingleResultInfo  {
  	bytes   Result      = 10;
 }
 
-message ClientRsqInfo {
-    bytes   m_Resp = 1;
-    uint32  m_Type = 2;
-    string  m_RqId = 3;
-}
 
 message GJ_Net_Pack
 {
@@ -90,4 +85,4 @@ message Net_Pack
 }
 
 /// go get -u github.com/golang/protobuf/tree/master/protoc-gen-go
-/// protoc --go_out=plugins=grpc:. proto/wallet.proto
+/// protoc --go_out=plugins=grpc:. proto/midmsg.proto
