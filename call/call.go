@@ -11,6 +11,107 @@ import (
 	"sync"
 	"time"
 )
+
+type CallCache struct {
+	Target string
+	Conn  *grpc.ClientConn
+	Client pb.ClientServiceClient
+}
+
+func NewCallCache(addr string)*CallCache{
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		 return nil
+	}
+	c := pb.NewClientServiceClient(conn)
+	return &CallCache{
+		Target:addr,
+		Conn:conn,
+		Client:c,
+	}
+}
+
+func (call *CallCache)Call(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait *sync.WaitGroup){
+	if wait != nil {
+		defer wait.Done()
+	}
+
+	sResult := pb.SingleResultInfo{
+		AskSequence:callinfo.AskSequence,
+		SendTimeApp:callinfo.SendTimeApp,
+		MsgType:callinfo.MsgType,
+		MsgAckType:callinfo.MsgAckType,
+		SyncType:uint32(callinfo.SyncType),
+		IsTimeOut:false,
+		IsDisCard:false,
+		IsResend:false,
+		Errinfo:nil,
+		Result:nil,
+	}
+
+
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if callinfo.Timeout > time.Second *0 {
+		ctx, cancel = context.WithTimeout(context.Background(), callinfo.Timeout)
+		defer cancel()
+	}else{
+		ctx = context.Background()
+	}
+	//////////////////////////////////////////////同步
+	r, err := call.Client.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
+
+	if err != nil {
+		log.Error("======================**************err",err.Error())
+		if tResult != nil {
+			sResult.Errinfo = []byte(err.Error())
+			tResult <- sResult
+		}
+		return
+	}else{
+		if tResult != nil {
+			//log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client return value:",string(r.M_Net_Rsp))
+			//////// 是否将结果返回到客户端  服务器等  /0 无需回复, 1 回复到发送方, 2 回复到离线服务器
+			if sResult.MsgAckType  == 1 {
+				sResult.Result = r.M_Net_Rsp
+			}
+			sResult.Errinfo = nil
+			tResult <- sResult
+		}
+		return
+	}
+	////////////////////超时处理
+	select {
+	case <-ctx.Done():
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+			TimeoutRequest.PutPoolRequest(callinfo)
+			//////////丢弃了
+			if tResult != nil {
+				sResult.IsResend = true
+			}
+		}else{
+			//////////丢弃了
+			if tResult != nil {
+				sResult.IsDisCard = true
+			}
+		}
+		if tResult != nil {
+			sResult.Result = nil
+			sResult.IsTimeOut = true
+			sResult.Errinfo = []byte(ctx.Err().Error())
+			tResult <- sResult
+		}
+		return
+	}
+	if tResult != nil {
+		sResult.Result = nil
+		sResult.IsTimeOut = false
+		sResult.Errinfo = nil
+		tResult <- sResult
+	}
+	return
+}
+
 ////////// 异步调用客户端的call接口
 func AsyncCallClient(callinfo model.CallInfo){
 	log.Trace("AsyncCallClient")
@@ -158,7 +259,6 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		}
 		return
 	}
-
 
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
