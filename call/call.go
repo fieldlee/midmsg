@@ -3,6 +3,7 @@ package call
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc"
 	"midmsg/log"
 	"midmsg/model"
 	pb "midmsg/proto"
@@ -16,11 +17,19 @@ func AsyncCallClient(callinfo model.CallInfo){
 	log.Trace("AsyncCallClient")
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
 	/////获取grpc pool
-	pool := GetCache(caddr)
-	if pool == nil {
-		pool = NewPool(caddr)
+	//pool := GetCache(caddr)
+	//if pool == nil {
+	//	return
+	//}
+	//conn,err:= pool.Get()
+	//if err != nil{
+	//	return
+	//}
+	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
+	if err != nil {
+		return
 	}
-	conn,_ := pool.Get()
+	defer conn.Close()
 
 	c := pb.NewClientServiceClient(conn)
 	var ctx context.Context
@@ -75,11 +84,19 @@ func AsyncCallClient(callinfo model.CallInfo){
 	clientAddr := fmt.Sprintf("%v:%d",callinfo.ClientIP,utils.ClientPort)
 
 	/////获取grpc pool
-	clientpool := GetCache(clientAddr)
-	if clientpool == nil {
-		clientpool = NewPool(clientAddr)
+	//clientpool := GetCache(clientAddr)
+	//if clientpool == nil {
+	//	return
+	//}
+	//clientconn,err:= clientpool.Get()
+	//if err != nil {
+	//	return
+	//}
+	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
+	if err != nil {
+		return
 	}
-	clientconn,_ := clientpool.Get()
+	defer clientconn.Close()
 
 	client := pb.NewClientServiceClient(clientconn)
 	var ctxClient context.Context
@@ -107,14 +124,19 @@ func AsyncReturnClient(sresult model.AsyncReturnInfo){
 	clientAddr := fmt.Sprintf("%v:%d",sresult.ClientIP,utils.ClientPort)
 
 	/////获取grpc pool
-	clientpool := GetCache(clientAddr)
-	if clientpool == nil {
-		clientpool = NewPool(clientAddr)
-	}
-	clientconn,err := clientpool.Get()
+	//clientpool := GetCache(clientAddr)
+	//if clientpool == nil {
+	//	return
+	//}
+	//clientconn,err := clientpool.Get()
+	//if err != nil {
+	//	return
+	//}
+	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	if err != nil {
 		return
 	}
+	defer clientconn.Close()
 
 	client := pb.NewClientServiceClient(clientconn)
 	var ctxClient context.Context
@@ -165,21 +187,34 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 
 
 	//////获得grpc池
-	pool := GetCache(caddr)
-	if pool == nil {
-		pool = NewPool(caddr)
-	}
-	conn, err := pool.Get()
+	//pool := GetCache(caddr)
+	//if pool == nil {
+	//	if tResult != nil {
+	//		sResult.Errinfo = []byte("get GRPC pool is nil")
+	//		tResult <- sResult
+	//	}
+	//	return
+	//}
+	//conn, err := pool.Get()
+	//if err != nil {
+	//	log.Error("err",err.Error())
+	//	if tResult != nil {
+	//		sResult.Errinfo = []byte(err.Error())
+	//		tResult <- sResult
+	//	}
+	//	return
+	//}
+	//
+	//defer pool.Put(conn)
+	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
-		log.Error("err",err.Error())
 		if tResult != nil {
 			sResult.Errinfo = []byte(err.Error())
 			tResult <- sResult
 		}
 		return
 	}
-
-	defer pool.Put(conn)
+	defer conn.Close()
 
 	c := pb.NewClientServiceClient(conn)
 	var ctx context.Context
@@ -191,8 +226,9 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		ctx = context.Background()
 	}
 	//////////////////////////////////////////////同步
-	r, err := c.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
 
+	r, err := c.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
+	log.Error("======================**************同步")
 	if err != nil {
 		log.Error("======================**************err",err.Error())
 		if tResult != nil {

@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-
 var Concache sync.Map
 
 func GetCache(key string)*pool.GRPCPool{
@@ -57,4 +56,8 @@ func NewPool(addr string)*pool.GRPCPool{
 	}
 
 	return g
+}
+
+func init(){
+	//_ = NewPool("127.0.0.1:8989")
 }
