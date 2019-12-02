@@ -15,6 +15,11 @@ var (
 	SubScribe map[string]interface{}
 	MaxQueue uint32
 	MaxWorker uint32
+	DbAddr string
+	DbPort string
+	DbUser string
+	DbPwd  string
+	DbName string
 )
 type Config struct {
 	V *viper.Viper
@@ -48,6 +53,15 @@ func ReloadConfig(){
 	MaxWorker = GetMaxWorker()
 	MaxQueue = GetMaxQueue()
 	SubScribe = GetSubscribe()
+	DbAddr,DbPort,DbUser,DbPwd,DbName = GetDbInfo()
+}
+
+func GetDbInfo()(string,string,string,string,string){
+	return Con.V.GetString("dbaddress"),
+	Con.V.GetString("dbport"),
+	Con.V.GetString("dbuser"),
+	Con.V.GetString("dbpassword"),
+	Con.V.GetString("dbname")
 }
 
 func GetMidAddress()string{

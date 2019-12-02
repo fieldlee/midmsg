@@ -3,6 +3,11 @@ port : 8080
 maxwoker : 1000
 maxqueue : 10
 clientport : 8989
+dbaddress : 127.0.0.1
+dbport : 3008
+dbuser : root
+dbpassword : 123456
+dbname : midmsg
 services:
   10001:
     service: test.service
