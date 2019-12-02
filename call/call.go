@@ -10,17 +10,16 @@ import (
 	"midmsg/utils"
 	"sync"
 	"time"
-
 )
 ////////// 异步调用客户端的call接口
 func AsyncCallClient(callinfo model.CallInfo){
 	log.Trace("AsyncCallClient")
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
+
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
 		return
 	}
-
 	defer conn.Close()
 	c := pb.NewClientServiceClient(conn)
 	var ctx context.Context
@@ -73,6 +72,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
 	log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
 	clientAddr := fmt.Sprintf("%v:%d",callinfo.ClientIP,utils.ClientPort)
+
 	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	if err != nil {
 		return
@@ -103,10 +103,13 @@ func AsyncReturnClient(sresult model.AsyncReturnInfo){
 	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
 	log.Trace("callinfo.ClientIP:",sresult.ClientIP,"utils.ClientPort:",utils.ClientPort)
 	clientAddr := fmt.Sprintf("%v:%d",sresult.ClientIP,utils.ClientPort)
+
+
 	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	if err != nil {
 		return
 	}
+
 	defer clientconn.Close()
 
 	client := pb.NewClientServiceClient(clientconn)
@@ -156,6 +159,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		return
 	}
 
+
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
 		if tResult != nil {
@@ -164,6 +168,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		}
 		return
 	}
+
 	defer conn.Close()
 
 	c := pb.NewClientServiceClient(conn)

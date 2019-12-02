@@ -33,6 +33,7 @@ func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,
 	if err != nil {
 		return nil,err
 	}
+
 	out := make(chan *pb.NetRspInfo)
 	//// 发送body到队列
 	handleBody := HandleBody{
