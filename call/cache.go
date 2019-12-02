@@ -2,10 +2,10 @@ package call
 
 import (
 	"github.com/flyaways/pool"
-	"time"
-	"sync"
-	"midmsg/log"
 	"google.golang.org/grpc"
+	"midmsg/log"
+	"sync"
+	"time"
 )
 
 
@@ -20,13 +20,17 @@ func GetCache(key string)*pool.GRPCPool{
 	}
 }
 
-func StoreCache(key string, v *pool.GRPCPool){
-	Concache.Store(key,v)
-	log.Trace(Concache)
+func StoreCache(key string, v *pool.GRPCPool)*pool.GRPCPool{
+	gPool,loaded := Concache.LoadOrStore(key,v)
+	if loaded {
+		return gPool.(*pool.GRPCPool)
+	}else{
+		return nil
+	}
 }
 
 
-func New(addr string)*pool.GRPCPool{
+func NewPool(addr string)*pool.GRPCPool{
 	options := &pool.Options{
 		InitTargets:  []string{addr},
 		InitCap:      5,
@@ -46,5 +50,11 @@ func New(addr string)*pool.GRPCPool{
 	if p == nil {
 		return nil
 	}
-	return p
+
+	g := StoreCache(addr,p)
+	if g == nil {
+		return nil
+	}
+
+	return g
 }

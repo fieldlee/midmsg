@@ -384,12 +384,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYP
 	wait := sync.WaitGroup{}
 	for i  := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
 		wait.Add(1)
-		//go call.CallClient(sendInfo,callResult,&wait)
-		c := call.GetCache(sendInfo.Address+":"+sendInfo.Port)
-		if c == nil {
-			c = call.NewCallCache(sendInfo.Address+":"+sendInfo.Port)
-		}
-		go c.Call(sendInfo,callResult,&wait)
+		go call.CallClient(sendInfo,callResult,&wait)
 	}
 	wait.Wait()
 
