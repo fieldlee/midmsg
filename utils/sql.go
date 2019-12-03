@@ -1,12 +1,11 @@
 package utils
 
 import (
-	"browser/model"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"time"
 	"errors"
 )
+
 
 type SqlCliet struct {
 	DB *sql.DB
@@ -54,7 +53,9 @@ func (s *SqlCliet)GetFunc(funcId string)(string,error){
 		var funid string
 		err = row.Scan(&funid)
 		if err != nil {
-
+			if sql.ErrNoRows == err {
+				return "",nil
+			}
 			return "" , err
 		}
 		return funid,nil
@@ -75,6 +76,7 @@ func (s *SqlCliet)InsertFuncList(funcId string,ip string)error{
 	}
 	return nil
 }
+
 func (s *SqlCliet)GetFuncList(funcId string)(string,error){
 	stmt,err := s.DB.Prepare("select ip from funclist where funcid = ?")
 	defer stmt.Close()
@@ -86,13 +88,37 @@ func (s *SqlCliet)GetFuncList(funcId string)(string,error){
 		var ip string
 		err = row.Scan(&ip)
 		if err != nil {
-
+			if sql.ErrNoRows == err {
+				return "",nil
+			}
 			return "" , err
 		}
 		return ip,nil
 	}else{
 		return "" , errors.New("the funcid in funclist table not exist")
 	}
+}
+
+func (s *SqlCliet)GetAllFunc()(map[string]string,error){
+	stmt,err := s.DB.Prepare("select funcid, ip from funclist")
+	defer stmt.Close()
+	if err != nil {
+		return nil, err
+	}
+	rows,err := stmt.Query()
+	if err != nil {
+		return nil,err
+	}
+	var funcipList = map[string]string{}
+	for rows.Next(){
+		var funcid,ip string
+		err = rows.Scan(&funcid,&ip)
+		if err != nil {
+			continue
+		}
+		funcipList[funcid]=ip
+	}
+	return funcipList,nil
 }
 
 func (s *SqlCliet)InsertSvc(svcId string)error{
@@ -119,13 +145,37 @@ func (s *SqlCliet)GetSvc(svcId string)(string,error){
 		var id string
 		err = row.Scan(&id)
 		if err != nil {
-
+			if sql.ErrNoRows == err {
+				return "",nil
+			}
 			return "",err
 		}
 		return id,nil
 	}else{
 		return "" , errors.New("the funcid in funclist table not exist")
 	}
+}
+
+func (s *SqlCliet)GetAllSvc()([]string,error){
+	stmt,err := s.DB.Prepare("select svcid from services")
+	defer stmt.Close()
+	if err != nil {
+		return nil, err
+	}
+	rows,err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+	var list = []string{}
+	for rows.Next(){
+		var svcno string
+		err = rows.Scan(&svcno)
+		if err != nil {
+			continue
+		}
+		list = append(list,svcno)
+	}
+	return list,nil
 }
 
 func (s *SqlCliet)InsertSubScribe(svcId,Ip string)error{
@@ -140,7 +190,6 @@ func (s *SqlCliet)InsertSubScribe(svcId,Ip string)error{
 	}
 	return nil
 }
-
 
 func (s *SqlCliet)GetSubScribe(svcId string)([]string,error){
 	stmt,err := s.DB.Prepare("select ip from subscribes where svcid = ?")
@@ -165,8 +214,45 @@ func (s *SqlCliet)GetSubScribe(svcId string)([]string,error){
 	return listIps,nil
 }
 
-//CREATE DATABASE IF NOT EXISTS midmsg DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+func (s *SqlCliet)GetSubScribeByIP(svcId,ip string)(string,error){
+	stmt,err := s.DB.Prepare("select ip from subscribes where svcid = ? and ip = ?")
+	defer stmt.Close()
+	if err != nil {
+		return "", err
+	}
+	row := stmt.QueryRow(svcId,ip)
+	if row != nil {
+		var ip string
+		err = row.Scan(&ip)
+		if err != nil {
+			if sql.ErrNoRows == err {
+				return "",nil
+			}
+			return "",err
+		}
+		return ip,nil
+	}else{
+		return "" , errors.New("the svcId and ip in subscribe table not exist")
+	}
+}
+
+func (s *SqlCliet)GetAllSubScribe()(map[string][]string,error){
+	svcList,err := s.GetAllSvc()
+	if err != nil {
+		return nil,err
+	}
+	var subscribeDetail = map[string][]string{}
+	for _,svcid := range svcList{
+		listIP , err := s.GetSubScribe(svcid)
+		if err != nil {
+			continue
+		}
+		subscribeDetail[svcid] = listIP
+	}
+	return subscribeDetail,nil
+}
+// CREATE DATABASE IF NOT EXISTS midmsg DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
 // CREATE TABLE func( funcid VARCHAR(50) NOT NULL, PRIMARY KEY (funcid ) )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 // CREATE TABLE funclist( funcid VARCHAR(50) NOT NULL, ip VARCHAR(50) NOT NULL, PRIMARY KEY (funcid ) )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 // CREATE TABLE services( svcid VARCHAR(50) NOT NULL, PRIMARY KEY (svcid ) )ENGINE=InnoDB DEFAULT CHARSET=utf8;
-// CREATE TABLE subscribes( svcid VARCHAR(50) NOT NULL,ip VARCHAR(50) NOT NULL, PRIMARY KEY (svcid ) )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+// CREATE TABLE subscribes( svcid VARCHAR(50) NOT NULL,ip VARCHAR(50) NOT NULL )ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -4,10 +4,13 @@ syntax = "proto3";
 package proto;
 
 service MidService {
-    rpc Sync(NetReqInfo)    returns (NetRspInfo) {};
-    rpc Async(NetReqInfo)   returns (NetRspInfo) {};
-    rpc Publish(NetReqInfo) returns (NetRspInfo) {};
-    rpc ReloadConfig(Rload) returns (Rload) {};
+    rpc Sync(NetReqInfo)            returns (NetRspInfo) {};
+    rpc Async(NetReqInfo)           returns (NetRspInfo) {};
+    rpc Broadcast(NetReqInfo)       returns (NetRspInfo) {};
+    rpc ReloadConfig(Rload)         returns (Rload) {};
+    rpc Register(RegisterInfo)      returns (RegisterReturnInfo){};
+    rpc Publish(PublishInfo)        returns (PublishReturnInfo){};
+    rpc Subscribe(SubscribeInfo)    returns (SubscribeReturnInfo){};
 }
 
 service ClientService{
@@ -58,7 +61,6 @@ message SingleResultInfo  {
  	bytes   Result      = 10;
 }
 
-
 message GJ_Net_Pack
 {
     map<uint32, Net_Pack> 		m_Net_Pack = 1;								//可缓存多个客户端请求
@@ -82,6 +84,37 @@ message Net_Pack
         int32					m_iDiscard			    = 11;					//消息是否可以丢弃 0 表示可以丢弃 1表示不可以
     }
     Min_Net_MsgBody				m_MsgBody = 2;
+}
+
+message RegisterInfo{
+    string  ip          = 1;    // 注册地址
+    string  port        = 2;    // 注册端口
+    string  sequence    = 3;    // 功能号
+}
+
+message RegisterReturnInfo{
+    bool    success          = 1;    // 注册结果
+    bytes   msg              = 2;    // 结果说明
+}
+
+message SubscribeInfo{
+    string  ip          = 1;    // 订阅地址
+    string  port        = 2;    // 订阅端口
+    string  service     = 3;    // 订阅服务号
+}
+
+message SubscribeReturnInfo{
+    bool    success          = 1;    // 订阅结果
+    bytes   msg              = 2;    // 结果说明
+}
+
+message PublishInfo{
+    string  service     = 1;    // 广播服务名称
+}
+
+message PublishReturnInfo{
+    bool    success          = 1;    // 广播结果
+    bytes   msg              = 2;    // 结果说明
 }
 
 /// go get -u github.com/golang/protobuf/tree/master/protoc-gen-go

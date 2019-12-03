@@ -2,6 +2,7 @@ package handle
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
 	"midmsg/call"
@@ -15,9 +16,31 @@ import (
 	"time"
 )
 
+var SqlClient  *utils.SqlCliet
+var sqlerr error
+var SeqIP = map[string]string{}
+var SubScribeDetail = map[string][]string{}
 func init()  {
+	SqlClient,sqlerr = utils.InitSql()
+	if sqlerr != nil {
+		log.Fatal(sqlerr)
+	}
+	loadSeqIP()
+	loadSubScribe()
+}
 
+func loadSeqIP(){
+	SeqIP,sqlerr = SqlClient.GetAllFunc()
+	if sqlerr != nil {
+		log.Fatal(sqlerr)
+	}
+}
 
+func loadSubScribe(){
+	SubScribeDetail,sqlerr = SqlClient.GetAllSubScribe()
+	if sqlerr != nil {
+		log.Fatal(sqlerr)
+	}
 }
 
 type MsgHandle struct {}
@@ -83,7 +106,7 @@ func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo
 	}
 }
 
-func (m *MsgHandle)Publish(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,error){
+func (m *MsgHandle)Broadcast(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,error){
 	ipaddr,err := utils.GetClietIP(ctx)
 	if err != nil {
 		return nil,err
@@ -109,6 +132,61 @@ func (m *MsgHandle)Publish(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspIn
 			return <-handleBody.Out,nil
 		}
 	}
+}
+
+func (m *MsgHandle)Register(ctx context.Context, in *pb.RegisterInfo)(*pb.RegisterReturnInfo,error){
+	funid,err := SqlClient.GetFunc(in.Sequence)
+	if err != nil{
+		return nil,err
+	}
+	if funid != ""{
+		return nil,errors.New(fmt.Sprintf("the %s function had registered",in.Sequence))
+	}
+	err = SqlClient.InsertFunc(in.Sequence)
+	if err != nil{
+		return nil,err
+	}
+	err = SqlClient.InsertFuncList(in.Sequence,fmt.Sprintf("%s:%s",in.Ip,in.Port))
+	if err != nil{
+		return nil,err
+	}
+	return &pb.RegisterReturnInfo{
+		Success:true,
+	}, nil
+}
+
+func (m *MsgHandle)Publish(ctx context.Context, in *pb.PublishInfo)(*pb.PublishReturnInfo,error){
+	svcid,err := SqlClient.GetSvc(in.Service)
+	if err != nil{
+		return nil,err
+	}
+	if svcid != ""{
+		return nil,errors.New(fmt.Sprintf("the %s service had registered",in.Service))
+	}
+	err = SqlClient.InsertSvc(in.Service)
+	if err != nil {
+		return nil,err
+	}
+	return &pb.PublishReturnInfo{
+		Success:true,
+	},nil
+}
+
+func (m *MsgHandle)Subscribe(ctx context.Context, in *pb.SubscribeInfo)(*pb.SubscribeReturnInfo,error) {
+	ip,err := SqlClient.GetSubScribeByIP(in.Service,fmt.Sprintf("%s:%s",in.Ip,in.Port))
+	if err != nil{
+		return nil,err
+	}
+	if ip != ""{
+		return nil,errors.New(fmt.Sprintf("the %s service and %s ip had registered",in.Service,fmt.Sprintf("%s:%s",in.Ip,in.Port)))
+	}
+	err = SqlClient.InsertSubScribe(in.Service,fmt.Sprintf("%s:%s",in.Ip,in.Port))
+	if err != nil {
+		return nil,err
+	}
+	return &pb.SubscribeReturnInfo{
+		Success:true,
+	},nil
 }
 
 func CheckHaveHead(inbody []byte) bool{
@@ -557,5 +635,3 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 
 	result <- tSendResult
 }
-
-

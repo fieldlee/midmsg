@@ -14,6 +14,7 @@ require (
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/envoyproxy/go-control-plane v0.9.1 // indirect
 	github.com/flyaways/pool v1.0.1
+	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/golang/protobuf v1.3.2
