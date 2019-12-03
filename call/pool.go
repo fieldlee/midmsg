@@ -69,7 +69,7 @@ func (p *AsyncReturnPool)PutPoolAsyncReturn(returninfo model.AsyncReturnInfo){
 func TimerCallPool(){
 	for  {
 		select {
-		case <- time.After(time.Second * 20):
+		case <- time.After(time.Second * 200):
 			TimeoutRequest.CallPoolRequest()
 			AsyncReturn.CallPoolAsyncReturn()
 		}

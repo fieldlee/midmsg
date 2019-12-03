@@ -47,7 +47,6 @@ func main()  {
 	rpcServer := grpc.NewServer()
 	pb.RegisterMidServiceServer(rpcServer, &handle.MsgHandle{})
 	reflection.Register(rpcServer)
-	//test()
 	if err = rpcServer.Serve(listener); err != nil {
 		log.Fatal("failed serve at: " + Host + ":" + Port)
 	}

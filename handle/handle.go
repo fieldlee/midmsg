@@ -140,7 +140,9 @@ func (m *MsgHandle)Register(ctx context.Context, in *pb.RegisterInfo)(*pb.Regist
 		return nil,err
 	}
 	if funid != ""{
-		return nil,errors.New(fmt.Sprintf("the %s function had registered",in.Sequence))
+		return &pb.RegisterReturnInfo{
+			Success:true,
+		},errors.New(fmt.Sprintf("the %s function had registered",in.Sequence))
 	}
 	err = SqlClient.InsertFunc(in.Sequence)
 	if err != nil{
@@ -164,7 +166,9 @@ func (m *MsgHandle)Publish(ctx context.Context, in *pb.PublishInfo)(*pb.PublishR
 		return nil,err
 	}
 	if svcid != ""{
-		return nil,errors.New(fmt.Sprintf("the %s service had registered",in.Service))
+		return &pb.PublishReturnInfo{
+			Success:true,
+		},errors.New(fmt.Sprintf("the %s service had registered",in.Service))
 	}
 	err = SqlClient.InsertSvc(in.Service)
 	if err != nil {
@@ -181,7 +185,9 @@ func (m *MsgHandle)Subscribe(ctx context.Context, in *pb.SubscribeInfo)(*pb.Subs
 		return nil,err
 	}
 	if ip != ""{
-		return nil,errors.New(fmt.Sprintf("the %s service and %s ip had registered",in.Service,fmt.Sprintf("%s:%s",in.Ip,in.Port)))
+		return &pb.SubscribeReturnInfo{
+			Success:true,
+		},errors.New(fmt.Sprintf("the %s service and %s ip had registered",in.Service,fmt.Sprintf("%s:%s",in.Ip,in.Port)))
 	}
 	err = SqlClient.InsertSubScribe(in.Service,fmt.Sprintf("%s:%s",in.Ip,in.Port))
 	if err != nil {

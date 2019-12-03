@@ -98,9 +98,8 @@ func AsyncCallClient(callinfo model.CallInfo){
 	}
 	defer clientconn.Close()
 
-	client := pb.NewClientServiceClient(clientconn)
-	var ctxClient context.Context
-	ctxClient = context.Background()
+	client 		:= pb.NewClientServiceClient(clientconn)
+	ctxClient 	:= context.Background()
 	_, err = client.AsyncCall(ctxClient,&sResult)
 	if err != nil {
 		log.ErrorWithFields(map[string]interface{}{
