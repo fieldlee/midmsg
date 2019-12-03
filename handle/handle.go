@@ -10,7 +10,6 @@ import (
 	"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -45,12 +44,13 @@ func loadSubScribe(){
 
 type MsgHandle struct {}
 
+/****
 func (m *MsgHandle)ReloadConfig(ctx context.Context, config *pb.Rload)(*pb.Rload,error){
 	out := &pb.Rload{}
 	utils.ReloadConfig()
 	return out , nil
 }
-
+*/
 func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo, error) {
 	ipaddr,err := utils.GetClietIP(ctx)
 	if err != nil {
@@ -150,6 +150,9 @@ func (m *MsgHandle)Register(ctx context.Context, in *pb.RegisterInfo)(*pb.Regist
 	if err != nil{
 		return nil,err
 	}
+
+	loadSeqIP()
+	log.Error(SeqIP)
 	return &pb.RegisterReturnInfo{
 		Success:true,
 	}, nil
@@ -184,6 +187,9 @@ func (m *MsgHandle)Subscribe(ctx context.Context, in *pb.SubscribeInfo)(*pb.Subs
 	if err != nil {
 		return nil,err
 	}
+
+	loadSubScribe()
+	log.Error(SubScribeDetail)
 	return &pb.SubscribeReturnInfo{
 		Success:true,
 	},nil
@@ -428,12 +434,23 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYP
 	if netpack.M_MsgBody.MIDiscard == 0 {
 		isDiscard = true
 	}
-
+	/******
 	/// select ASK_TYPE
 	sevices := utils.GetServiceByKey(fmt.Sprintf("%d",netpack.M_MsgBody.MLAsktype))
 	address := sevices["address"].(string)
 	port 	:= fmt.Sprintf("%d",sevices["port"])
 	service := sevices["service"].(string)
+	 */
+	tempIP := SeqIP[fmt.Sprintf("%d",netpack.M_MsgBody.MLAsktype)]
+	if tempIP == "" {
+		tSendResult.CheckErr = []byte(errors.New(fmt.Sprintf("the %d sequence not found address",netpack.M_MsgBody.MLAsktype)).Error())
+		result <- tSendResult
+		return
+	}
+	address := strings.Split(tempIP,":")[0]
+	port := strings.Split(tempIP,":")[1]
+	service := ""
+
 	sendBytes,err := proto.Marshal(netpack)
 	if err != nil {
 		tSendResult.CheckErr = []byte(err.Error())
@@ -503,12 +520,21 @@ func PublishBody(inbody []byte,service,clientIP string) (*pb.NetRspInfo,error) {
 			M_Err:[]byte(err.Error()),
 		},nil
 	}
-
+	/******
+	/////// Get Subscribe by service
 	svcAddrs := utils.GetSubscribeByKey(service)
 	if len(svcAddrs)==0 {
 		log.ErrorWithFields(map[string]interface{}{"func":"PublishBody"},"get services error,not address got")
 		return &pb.NetRspInfo{
 			M_Err:[]byte(model.ErrGotService.Error()),
+		},nil
+	}
+	*/
+	svcAddrs := SubScribeDetail[service]
+
+	if len(svcAddrs)==0{
+		return &pb.NetRspInfo{
+			M_Err:[]byte(errors.New(fmt.Sprintf("the %s service not found subscribe addresses",service)).Error()),
 		},nil
 	}
 
@@ -533,7 +559,7 @@ func PublishBody(inbody []byte,service,clientIP string) (*pb.NetRspInfo,error) {
 	},nil
 }
 
-func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svcAddrs []interface{},result chan pb.SendResultInfo){
+func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svcAddrs []string,result chan pb.SendResultInfo){
 	tSendResult := pb.SendResultInfo{
 		Key:key,
 		SendCount:netpack.M_MsgBody.MSSendCount,
@@ -580,34 +606,28 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 	wait := sync.WaitGroup{}
 	callResult := make(chan pb.SingleResultInfo,len(svcAddrs))
 
-	for _ , v := range svcAddrs {
-		if reflect.TypeOf(v).Kind() == reflect.String {
-			tIP := v.(string)
-			address := strings.Split(tIP,":")[0]
-			port := strings.Split(tIP,":")[1]
-			///////=====================
-			sendInfo := model.CallInfo{
-				ClientIP:clientIP,
-				Address:address,
-				Port:port,
-				Service:service,
-				MsgBody:sendBytes,
-				Timeout:timeout,
-				IsDiscard:isDiscard,
-				AskSequence:netpack.M_MsgBody.MLAskSequence,
-				SendTimeApp:netpack.M_MsgBody.MISendTimeApp,
-				MsgType :netpack.M_MsgBody.MCMsgType,
-				MsgAckType :netpack.M_MsgBody.MCMsgAckType,
-				SyncType:model.CALL_CLIENT_PUBLISH,
-			}
-
-
-			//for i  := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
-			wait.Add(1)
-			go call.CallClient(sendInfo,callResult,&wait)
-			//}
-
+	for _ , tIP := range svcAddrs {
+		address := strings.Split(tIP,":")[0]
+		port := strings.Split(tIP,":")[1]
+		///////=====================
+		sendInfo := model.CallInfo{
+			ClientIP:clientIP,
+			Address:address,
+			Port:port,
+			Service:service,
+			MsgBody:sendBytes,
+			Timeout:timeout,
+			IsDiscard:isDiscard,
+			AskSequence:netpack.M_MsgBody.MLAskSequence,
+			SendTimeApp:netpack.M_MsgBody.MISendTimeApp,
+			MsgType :netpack.M_MsgBody.MCMsgType,
+			MsgAckType :netpack.M_MsgBody.MCMsgAckType,
+			SyncType:model.CALL_CLIENT_PUBLISH,
 		}
+		//for i  := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
+		wait.Add(1)
+		go call.CallClient(sendInfo,callResult,&wait)
+		//}
 	}
 	wait.Wait()
 

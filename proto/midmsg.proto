@@ -7,7 +7,7 @@ service MidService {
     rpc Sync(NetReqInfo)            returns (NetRspInfo) {};
     rpc Async(NetReqInfo)           returns (NetRspInfo) {};
     rpc Broadcast(NetReqInfo)       returns (NetRspInfo) {};
-    rpc ReloadConfig(Rload)         returns (Rload) {};
+//    rpc ReloadConfig(Rload)         returns (Rload) {};
     rpc Register(RegisterInfo)      returns (RegisterReturnInfo){};
     rpc Publish(PublishInfo)        returns (PublishReturnInfo){};
     rpc Subscribe(SubscribeInfo)    returns (SubscribeReturnInfo){};
@@ -18,7 +18,7 @@ service ClientService{
     rpc AsyncCall(SingleResultInfo) returns (CallRspInfo) {};
 }
 
-message Rload{}
+//message Rload{}
 
 message NetReqInfo
 {
