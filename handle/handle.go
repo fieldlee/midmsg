@@ -457,12 +457,12 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYP
 	port := strings.Split(tempIP,":")[1]
 	service := ""
 
-	sendBytes,err := proto.Marshal(netpack)
-	if err != nil {
-		tSendResult.CheckErr = []byte(err.Error())
-		result <- tSendResult
-		return
-	}
+	//sendBytes,err := proto.Marshal(netpack)
+	//if err != nil {
+	//	tSendResult.CheckErr = []byte(err.Error())
+	//	result <- tSendResult
+	//	return
+	//}
 	///// 超时时间
 	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
 
@@ -471,7 +471,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYP
 		Address:address,
 		Port:port,
 		Service:service,
-		MsgBody:sendBytes,
+		MsgBody:netpack,
 		Timeout:timeout,
 		IsDiscard:isDiscard,
 		AskSequence:netpack.M_MsgBody.MLAskSequence,
@@ -600,12 +600,12 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 		isDiscard = true
 	}
 
-	sendBytes,err := proto.Marshal(netpack)
-	if err != nil {
-		tSendResult.CheckErr = []byte(err.Error())
-		result <- tSendResult
-		return
-	}
+	//sendBytes,err := proto.Marshal(netpack)
+	//if err != nil {
+	//	tSendResult.CheckErr = []byte(err.Error())
+	//	result <- tSendResult
+	//	return
+	//}
 
 	///// 超时时间
 	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
@@ -621,7 +621,7 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 			Address:address,
 			Port:port,
 			Service:service,
-			MsgBody:sendBytes,
+			MsgBody:netpack,
 			Timeout:timeout,
 			IsDiscard:isDiscard,
 			AskSequence:netpack.M_MsgBody.MLAskSequence,

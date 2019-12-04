@@ -14,7 +14,7 @@ service MidService {
 }
 
 service ClientService{
-    rpc Call(NetReqInfo)            returns (CallRspInfo) {};
+    rpc Call(CallReqInfo)            returns (CallRspInfo) {};
     rpc AsyncCall(SingleResultInfo) returns (CallRspInfo) {};
 }
 
@@ -22,8 +22,14 @@ service ClientService{
 
 message NetReqInfo
 {
-    bytes   m_Body   = 1;     ///请求rpc bytes
-    string  service  = 2;     ///请求的注册服务的名称，只有publish用的到
+    bytes      m_Body   = 1;     ///请求rpc bytes
+    string     service  = 2;     ///请求的注册服务的名称，只有publish用的到
+}
+
+message CallReqInfo
+{
+    Net_Pack   m_Body   = 1;     ///请求rpc bytes
+    string     service  = 2;     ///请求的注册服务的名称，只有publish用的到
 }
 
 message CallRspInfo

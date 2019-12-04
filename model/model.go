@@ -35,7 +35,7 @@ type CallInfo struct {
 	Service 		string
 	ClientIP		string
 	Timeout 		time.Duration
-	MsgBody 		[]byte
+	MsgBody 		*pb.Net_Pack
 }
 
 type AsyncReturnInfo struct {

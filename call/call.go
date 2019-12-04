@@ -54,7 +54,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 		Result:nil,
 	}
 
-	r, err := c.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
+	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody})
 
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
 	if err != nil {
@@ -226,7 +226,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	}
 	//////////////////////////////////////////////同步
 
-	r, err := c.Call(ctx,&pb.NetReqInfo{M_Body:callinfo.MsgBody})
+	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody})
 	log.Error("======================**************同步")
 	if err != nil {
 		log.Error("======================**************err",err.Error())
