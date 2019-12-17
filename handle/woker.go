@@ -39,7 +39,8 @@ func (w Worker) Start() {
 				}else{ ///////// 校验package head 完成后 校验package 内容
 					inBody := ModifyOrFullHead(body.MBody,headInfo)  /////修改后的包bytes
 
-					if body.Type == model.CALL_CLIENT_PUBLISH {  /// 订阅消息发送
+					if body.Type == model.CALL_CLIENT_PUBLISH {
+						/// 订阅消息发送
 						rspInfo,err := PublishBody(inBody,body.Service,body.ClientIp)
 						if err != nil {
 							pbRespinfo := &pb.NetRspInfo{
@@ -53,7 +54,8 @@ func (w Worker) Start() {
 							body.Out <- info
 						}(rspInfo)
 					}else{
-						rspInfo,err := AnzalyBody(inBody,body.Type,body.ClientIp)
+						//////异步回复和同步调用
+						rspInfo,err := AnzalyBody(inBody,body.Sequence,body.Type,body.ClientIp)
 						if err != nil {
 							pbRespinfo := &pb.NetRspInfo{
 								M_Err:[]byte(err.Error()),

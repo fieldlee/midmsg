@@ -53,8 +53,10 @@ func AsyncCallClient(callinfo model.CallInfo){
 		Errinfo:nil,
 		Result:nil,
 	}
+	///保持异步数据到map中
+	StoreAsyncAnswer(callinfo.Sequence,callinfo)
 
-	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody})
+	r, err := c.AsyncCall(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence})
 
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
 	if err != nil {
@@ -79,48 +81,55 @@ func AsyncCallClient(callinfo model.CallInfo){
 		}
 	}
 
-	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
-	log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
-	clientAddr := fmt.Sprintf("%v:%d",callinfo.ClientIP,utils.ClientPort)
-
-	/////获取grpc pool
-	//clientpool := GetCache(clientAddr)
-	//if clientpool == nil {
-	//	return
-	//}
-	//clientconn,err:= clientpool.Get()
+	/////////////////////////////调用call async rsp////////////////////////////////////////////////////////////
+	//log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
+	//clientAddr := fmt.Sprintf("%v:%d",callinfo.ClientIP,utils.ClientPort)
+	//
+	///////获取grpc pool
+	////clientpool := GetCache(clientAddr)
+	////if clientpool == nil {
+	////	return
+	////}
+	////clientconn,err:= clientpool.Get()
+	////if err != nil {
+	////	return
+	////}
+	//clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	//if err != nil {
 	//	return
 	//}
-	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
-	if err != nil {
-		return
-	}
-	defer clientconn.Close()
-
-	client 		:= pb.NewClientServiceClient(clientconn)
-	ctxClient 	:= context.Background()
-	_, err = client.AsyncCall(ctxClient,&sResult)
-	if err != nil {
-		log.ErrorWithFields(map[string]interface{}{
-			"func":"AsyncCallClient",
-		},"======================**************AsyncCallClient Err:",err.Error())
-
-		////////////将发送失败的异步请求的处理结果，缓存起来
-		returninfo := model.AsyncReturnInfo{
-			ClientIP:callinfo.ClientIP,
-			SResult:sResult,
-		}
-		AsyncReturn.PutPoolAsyncReturn(returninfo)
-	}
+	//defer clientconn.Close()
+	//
+	//client 		:= pb.NewClientServiceClient(clientconn)
+	//ctxClient 	:= context.Background()
+	//_, err = client.AsyncCall(ctxClient,&sResult)
+	//if err != nil {
+	//	log.ErrorWithFields(map[string]interface{}{
+	//		"func":"AsyncCallClient",
+	//	},"======================**************AsyncCallClient Err:",err.Error())
+	//
+	//	////////////将发送失败的异步请求的处理结果，缓存起来
+	//	returninfo := model.AsyncReturnInfo{
+	//		ClientIP:callinfo.ClientIP,
+	//		SResult:sResult,
+	//	}
+	//	AsyncReturn.PutPoolAsyncReturn(returninfo)
+	//}
 
 	return
 }
 ///////////// 异步处理结果失败后，再发起call
-func AsyncReturnClient(sresult model.AsyncReturnInfo){
+func AsyncReturnClient(callinfo model.CallInfo){
 	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
-	log.Trace("callinfo.ClientIP:",sresult.ClientIP,"utils.ClientPort:",utils.ClientPort)
-	clientAddr := fmt.Sprintf("%v:%d",sresult.ClientIP,utils.ClientPort)
+	log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
+
+	loadCallInfo := LoadAsyncAnswer(callinfo.Sequence)
+
+	if loadCallInfo.ClientIP == "" {
+		return
+	}
+
+	clientAddr := fmt.Sprintf("%v:%d",loadCallInfo.ClientIP,utils.ClientPort)
 
 	/////获取grpc pool
 	//clientpool := GetCache(clientAddr)
@@ -131,6 +140,7 @@ func AsyncReturnClient(sresult model.AsyncReturnInfo){
 	//if err != nil {
 	//	return
 	//}
+
 	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	if err != nil {
 		return
@@ -140,14 +150,14 @@ func AsyncReturnClient(sresult model.AsyncReturnInfo){
 	client := pb.NewClientServiceClient(clientconn)
 	var ctxClient context.Context
 	ctxClient = context.Background()
-	_, err = client.AsyncCall(ctxClient,&sresult.SResult)
+	_, err = client.AsyncAnswer(ctxClient,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence})
 	if err != nil {
 		log.ErrorWithFields(map[string]interface{}{
 			"func":"AsyncCallClient",
 		},"======================**************AsyncCallClient Err:",err.Error())
 
 		////////////将发送失败的异步请求的处理结果，缓存起来
-		go AsyncReturn.PutPoolAsyncReturn(sresult)
+		go AsyncReturn.PutPoolAsyncReturn(callinfo)
 	}
 	return
 }

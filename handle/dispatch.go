@@ -8,6 +8,7 @@ import (
 )
 
 type HandleBody struct {
+	Sequence    string
 	Service     string
 	MBody 		[]byte
 	Type   		model.CALL_CLIENT_TYPE

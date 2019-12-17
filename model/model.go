@@ -24,6 +24,7 @@ type HeadInfo struct {
 }
 
 type CallInfo struct {
+	Sequence 		string
 	AskSequence 	uint64
 	SendTimeApp 	uint64
 	MsgType 		int32
@@ -127,4 +128,5 @@ var (
 	CALL_CLIENT_SYNC 	  CALL_CLIENT_TYPE = 0
 	CALL_CLIENT_ASYNC     CALL_CLIENT_TYPE = 1
 	CALL_CLIENT_PUBLISH   CALL_CLIENT_TYPE = 2
+	CALL_CLIENT_ANSWER    CALL_CLIENT_TYPE = 3
 )

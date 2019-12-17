@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pborman/uuid"
 	"midmsg/call"
 	"midmsg/log"
 	"midmsg/model"
@@ -44,13 +45,6 @@ func loadSubScribe(){
 
 type MsgHandle struct {}
 
-/****
-func (m *MsgHandle)ReloadConfig(ctx context.Context, config *pb.Rload)(*pb.Rload,error){
-	out := &pb.Rload{}
-	utils.ReloadConfig()
-	return out , nil
-}
-*/
 func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo, error) {
 	ipaddr,err := utils.GetClietIP(ctx)
 	if err != nil {
@@ -65,6 +59,16 @@ func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,
 		Type: model.CALL_CLIENT_SYNC,
 		Out: out,
 	}
+	///// 异步answer
+	if call.CheckAsyncAnswer(in.Uuid) {
+		handleBody = HandleBody{
+			Sequence:in.Uuid,
+			ClientIp:ipaddr,
+			MBody:in.M_Body,
+			Type: model.CALL_CLIENT_ANSWER,
+			Out: out,
+		}
+	}
 
 	go func(handleBody HandleBody) {
 		JobQueue <- handleBody
@@ -76,7 +80,6 @@ func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,
 			return <-handleBody.Out,nil
 		}
 	}
-
 }
 
 func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo, error) {
@@ -353,7 +356,7 @@ func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 	return &headinfo,nil
 }
 
-func AnzalyBody(inbody []byte,syncType model.CALL_CLIENT_TYPE,clientIP string) (*pb.NetRspInfo,error) {
+func AnzalyBody(inbody []byte,uuid string,syncType model.CALL_CLIENT_TYPE,clientIP string) (*pb.NetRspInfo,error) {
 	body := inbody[32:]
 	netPack := pb.GJ_Net_Pack{}
 	err :=  proto.Unmarshal(body,&netPack)
@@ -391,7 +394,9 @@ func AnzalyBody(inbody []byte,syncType model.CALL_CLIENT_TYPE,clientIP string) (
 		////fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
 		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)
 		//fmt.Println("pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)  //// 同一请求次数
-		go CheckAndSend(key ,netPack.M_Net_Pack[key],syncType,clientIP,singleResult)
+
+		go CheckAndSend(key ,netPack.M_Net_Pack[key],uuid,syncType,clientIP,singleResult)
+
 	}
 
 	defer close(singleResult)
@@ -406,7 +411,22 @@ func AnzalyBody(inbody []byte,syncType model.CALL_CLIENT_TYPE,clientIP string) (
 	},nil
 }
 
-func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYPE,clientIP string,result chan pb.SendResultInfo){
+func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CALL_CLIENT_TYPE,clientIP string,result chan pb.SendResultInfo){
+
+	////////////=======异步回复start======================================
+	if syncType == model.CALL_CLIENT_ANSWER{
+		sendInfo := model.CallInfo{
+			Sequence:suuid,
+			ClientIP:clientIP,
+			SyncType:syncType,
+			MsgBody:netpack,
+		}
+		call.AsyncReturnClient(sendInfo)
+		result <- pb.SendResultInfo{}
+		return
+	}
+	////////////=======异步回复 end======================================
+
 	tSendResult := pb.SendResultInfo{
 		Key:key,
 		SendCount:netpack.M_MsgBody.MSSendCount,
@@ -467,6 +487,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,syncType model.CALL_CLIENT_TYP
 	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
 
 	sendInfo := model.CallInfo{
+		Sequence:uuid.New(),
 		ClientIP:clientIP,
 		Address:address,
 		Port:port,
