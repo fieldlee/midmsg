@@ -218,26 +218,19 @@ func CheckHaveHead(inbody []byte) bool{
 func ModifyBody(inbody []byte, info *model.HeadInfo)[]byte{
 	bodyContent := inbody[32:]
 	//////如果是压缩，解压缩后再比较
-	if int16(info.CompressWay) == int16(model.Compression_zip) {
-		bodyContent = utils.UnzipBytes(bodyContent)
+	if model.COMPRESS_TYPE(info.CompressWay) == model.Compression_zip{
+		bodyContent,_ = utils.UnzipByte(bodyContent)
 	}
 	//////解析加密和解密
-	switch int16(info.Encryption) {
-	case int16(model.Encryption_No):
-		return bodyContent
-	case int16(model.Encryption_Des):
-		return utils.Decrypt3DES(bodyContent,[]byte(string(info.Back2)))
-	case int16(model.Encryption_AES):
-		aesByte,err := utils.DecryptAes(bodyContent,[]byte(string(info.Back2)))
-		if err != nil {
-			return nil
-		}
+	switch model.ENCRPTION_TYPE(info.Encryption) {
+	case model.Encryption_Des:
+		return utils.Decrypt3DES(bodyContent,[]byte(model.PassPass))
+	case model.Encryption_AES:
+		aesByte,_ := utils.DecryptAes(bodyContent,[]byte(model.PassPass))
 		return aesByte
-	case int16(model.Encryption_RSA):
-		rsaByte,err := utils.DecryptRsa(bodyContent,[]byte(string(info.Back2)))
-		if err != nil {
-			return nil
-		}
+	case model.Encryption_RSA:
+		prikey := utils.BytesToPrivateKey(model.PriKeyByte)
+		rsaByte := utils.DecryptWithPrivateKey(bodyContent,prikey)
 		return rsaByte
 	default:
 		return bodyContent
@@ -294,7 +287,6 @@ func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 	headinfo.CompressWay = compressionWay
 
 
-
 	//加密方式   1
 	m_cEncryption := bodyHead[:1]
 	bodyHead = bodyHead[1:]
@@ -342,18 +334,20 @@ func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 	m_lUncompressedSize := bodyHead[:4]
 	bodyHead = bodyHead[4:]
 	uncompressiondSize := utils.BytesToInt32(m_lUncompressedSize)
-	//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"uncompressiondSize:",uncompressiondSize)
-	if bufSize > uncompressiondSize {
-		return nil,model.ErrCompresseduncompressedLength
-	}
 
 	//////如果压缩，解压然后比较长度
 	if compressionWay == uint8(model.Compression_zip){
-		unzipBytes:=utils.UnzipBytes(inbody[32:])
+		unzipBytes,_:=utils.UnzipByte(inbody[32:])
 		if uncompressiondSize != int32(len(unzipBytes)){
 			return nil,model.ErrUNCompressedLength
 		}
+	}else{
+		/////不压缩的数据长度相同
+		if bufSize != uncompressiondSize{
+			return nil,model.ErrUNCompressedLength
+		}
 	}
+
 	headinfo.UncompressedSize = uncompressiondSize
 	//预留位     4
 	m_lBack2 := bodyHead[:]

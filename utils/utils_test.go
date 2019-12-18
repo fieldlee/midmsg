@@ -56,7 +56,7 @@ func TestPrintCh(t *testing.T) {
 
 func TestEncryptDecrypt(t *testing.T) {
 	src := []byte("hello world!")
-	key := []byte("123456781234")
+	key := []byte("meimeigujiagujia")
 	encryptByte ,err := EncryptAes(src,key)
 	if err != nil {
 		fmt.Println(err)
@@ -66,4 +66,19 @@ func TestEncryptDecrypt(t *testing.T) {
 		fmt.Println(err)
 	}
 	fmt.Println(string(dsrc))
+}
+
+func TestZipBytes(t *testing.T) {
+	src := []byte("hello worldasdfasdfasdfasdfasdfasdfadsfasdfasdfasdfasdfasdfasdfasdfasdfasdfsdfasdfasdfasdfasdfasdfasdf!")
+	fmt.Println(len(src))
+	zipsrc,err := ZipByte(src)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(len(zipsrc))
+	unzipbyte,err  := UnzipByte(zipsrc)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(unzipbyte),len(unzipbyte))
 }

@@ -5,15 +5,17 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/aes"
+	"crypto/rsa"
 	"crypto/cipher"
 	"crypto/des"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
+	"crypto/sha512"
 	"encoding/binary"
+	"encoding/pem"
 	"fmt"
 	"google.golang.org/grpc/peer"
-	"io/ioutil"
+	"io"
 	"midmsg/model"
 	"net"
 	"runtime"
@@ -138,22 +140,46 @@ func BytesToInt32(b []byte) int32 {
 	return int32(x)
 }
 
-func UnzipBytes(zip []byte)[]byte{
+func UnzipByte(data []byte) (resData []byte, err error) {
+	b := bytes.NewBuffer(data)
+
+	var r io.Reader
+	r, err = gzip.NewReader(b)
+	if err != nil {
+		return
+	}
+
+	var resB bytes.Buffer
+	_, err = resB.ReadFrom(r)
+	if err != nil {
+		return
+	}
+
+	resData = resB.Bytes()
+
+	return
+}
+
+func ZipByte(data []byte) (compressedData []byte, err error) {
 	var b bytes.Buffer
-	w := gzip.NewWriter(&b)
-	defer w.Close()
-	w.Write(zip[:])
-	w.Flush()
-	r, err := gzip.NewReader(&b)
+	gz := gzip.NewWriter(&b)
+
+	_, err = gz.Write(data)
 	if err != nil {
-		return zip
+		return
 	}
-	defer r.Close()
-	undatas, err := ioutil.ReadAll(r)
-	if err != nil {
-		return zip
+
+	if err = gz.Flush(); err != nil {
+		return
 	}
-	return undatas
+
+	if err = gz.Close(); err != nil {
+		return
+	}
+
+	compressedData = b.Bytes()
+
+	return
 }
 
 func GetGID() uint64 {
@@ -244,17 +270,33 @@ func Decrypt3DES(src []byte,key []byte) []byte {
 	return src
 }
 
-func EncryptRsa(originalData,key []byte)([]byte,error){
-	pubKey, _ := x509.ParsePKIXPublicKey(key)
-	encryptedData,err:=rsa.EncryptPKCS1v15(rand.Reader, pubKey.(*rsa.PublicKey), originalData)
-	return encryptedData,err
+// BytesToPrivateKey bytes to private key
+func BytesToPrivateKey(priv []byte) *rsa.PrivateKey {
+	block, _ := pem.Decode(priv)
+	enc := x509.IsEncryptedPEMBlock(block)
+	b := block.Bytes
+	var err error
+	if enc {
+		fmt.Println("is encrypted pem block")
+		b, err = x509.DecryptPEMBlock(block, nil)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	}
+	key, err := x509.ParsePKCS1PrivateKey(b)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return key
 }
-
-//（2）解密：对采用sha1算法加密后转base64格式的数据进行解密（私钥PKCS1格式）
-func DecryptRsa(encryptedData,key []byte)([]byte,error){
-	prvKey,_:=x509.ParsePKCS1PrivateKey(key)
-	originalData,err:=rsa.DecryptPKCS1v15(rand.Reader,prvKey,encryptedData)
-	return originalData,err
+// DecryptWithPrivateKey decrypts data with private key
+func DecryptWithPrivateKey(ciphertext []byte, priv *rsa.PrivateKey) []byte {
+	hash := sha512.New()
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, priv, ciphertext, nil)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return plaintext
 }
 
 func GetClietIP(ctx context.Context) (string, error) {
