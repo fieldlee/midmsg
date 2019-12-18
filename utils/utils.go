@@ -10,7 +10,7 @@ import (
 	"crypto/des"
 	"crypto/rand"
 	"crypto/x509"
-	"crypto/sha512"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/pem"
 	"fmt"
@@ -270,6 +270,44 @@ func Decrypt3DES(src []byte,key []byte) []byte {
 	return src
 }
 
+// BytesToPublicKey bytes to public key
+func BytesToPublicKey(pub []byte) *rsa.PublicKey {
+	block, _ := pem.Decode(pub)
+	enc := x509.IsEncryptedPEMBlock(block)
+	b := block.Bytes
+	var err error
+	if enc {
+		fmt.Println("is encrypted pem block")
+		b, err = x509.DecryptPEMBlock(block, nil)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	}
+	fmt.Println(pub)
+	fmt.Println(b)
+	ifc, err := x509.ParsePKIXPublicKey(b)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	key, ok := ifc.(*rsa.PublicKey)
+	if !ok {
+		fmt.Println("not ok")
+	}
+	return key
+}
+
+// EncryptWithPublicKey encrypts data with public key
+func EncryptWithPublicKey(msg []byte, pub *rsa.PublicKey) []byte {
+	label := []byte("")
+	sha256hash := sha256.New()
+	ciphertext, err := rsa.EncryptOAEP(sha256hash, rand.Reader, pub, msg, label)
+	if err != nil {
+		return nil
+	}
+	return ciphertext
+}
+
 // BytesToPrivateKey bytes to private key
 func BytesToPrivateKey(priv []byte) *rsa.PrivateKey {
 	block, _ := pem.Decode(priv)
@@ -291,12 +329,12 @@ func BytesToPrivateKey(priv []byte) *rsa.PrivateKey {
 }
 // DecryptWithPrivateKey decrypts data with private key
 func DecryptWithPrivateKey(ciphertext []byte, priv *rsa.PrivateKey) []byte {
-	hash := sha512.New()
-	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, priv, ciphertext, nil)
+	sha256hash := sha256.New()
+	decryptedtext, err := rsa.DecryptOAEP(sha256hash, rand.Reader, priv, ciphertext, nil)
 	if err != nil {
-		fmt.Println(err.Error())
+		return nil
 	}
-	return plaintext
+	return decryptedtext
 }
 
 func GetClietIP(ctx context.Context) (string, error) {

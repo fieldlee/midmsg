@@ -224,9 +224,9 @@ func ModifyBody(inbody []byte, info *model.HeadInfo)[]byte{
 	//////解析加密和解密
 	switch model.ENCRPTION_TYPE(info.Encryption) {
 	case model.Encryption_Des:
-		return utils.Decrypt3DES(bodyContent,[]byte(model.PassPass))
+		return utils.Decrypt3DES(bodyContent,[]byte(model.PassPass24))
 	case model.Encryption_AES:
-		aesByte,_ := utils.DecryptAes(bodyContent,[]byte(model.PassPass))
+		aesByte,_ := utils.DecryptAes(bodyContent,[]byte(model.PassPass16))
 		return aesByte
 	case model.Encryption_RSA:
 		prikey := utils.BytesToPrivateKey(model.PriKeyByte)
