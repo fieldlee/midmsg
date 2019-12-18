@@ -53,3 +53,17 @@ func TestPrintCh(t *testing.T) {
 	})
 	fmt.Print(list)
 }
+
+func TestEncryptDecrypt(t *testing.T) {
+	src := []byte("hello world!")
+	key := []byte("123456781234")
+	encryptByte ,err := EncryptAes(src,key)
+	if err != nil {
+		fmt.Println(err)
+	}
+	dsrc,err := DecryptAes(encryptByte,key)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(dsrc))
+}

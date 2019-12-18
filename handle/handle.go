@@ -215,30 +215,33 @@ func CheckHaveHead(inbody []byte) bool{
 	return true
 }
 
-func ModifyOrFullHead(inbody []byte, info *model.HeadInfo)[]byte{
-	if CheckHaveHead(inbody){ // 包含消息头
-
-	}else{ //不包含消息头，应该添加消息头
-		headINfo := model.HeadInfo{
-			Tag:"ent2015",
-			Version:1000,
-			ClientType:int16(model.Mid_Msg_Type),
-			HeadLength:32,
-			CompressWay:uint8(model.Compression_no),
-			Encryption:uint8(model.Encryption_No),
-			Sig:0,
-			Format:0,
-			NetFlag:0,
-			Back1:0,
-			BufSize:int32(len(inbody)),
-			UncompressedSize:int32(len(inbody)),
-			Back2:0,
-		}
-
-	    inbody = utils.JoinHeadAndBody(headINfo,inbody)
-
+func ModifyBody(inbody []byte, info *model.HeadInfo)[]byte{
+	bodyContent := inbody[32:]
+	//////如果是压缩，解压缩后再比较
+	if int16(info.CompressWay) == int16(model.Compression_zip) {
+		bodyContent = utils.UnzipBytes(bodyContent)
 	}
-	return inbody
+	//////解析加密和解密
+	switch int16(info.Encryption) {
+	case int16(model.Encryption_No):
+		return bodyContent
+	case int16(model.Encryption_Des):
+		return utils.Decrypt3DES(bodyContent,[]byte(string(info.Back2)))
+	case int16(model.Encryption_AES):
+		aesByte,err := utils.DecryptAes(bodyContent,[]byte(string(info.Back2)))
+		if err != nil {
+			return nil
+		}
+		return aesByte
+	case int16(model.Encryption_RSA):
+		rsaByte,err := utils.DecryptRsa(bodyContent,[]byte(string(info.Back2)))
+		if err != nil {
+			return nil
+		}
+		return rsaByte
+	default:
+		return bodyContent
+	}
 }
 
 func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
@@ -289,6 +292,9 @@ func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 		return nil,model.ErrCompressionType
 	}
 	headinfo.CompressWay = compressionWay
+
+
+
 	//加密方式   1
 	m_cEncryption := bodyHead[:1]
 	bodyHead = bodyHead[1:]
@@ -357,7 +363,7 @@ func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 }
 
 func AnzalyBody(inbody []byte,uuid string,syncType model.CALL_CLIENT_TYPE,clientIP string) (*pb.NetRspInfo,error) {
-	body := inbody[32:]
+	body := inbody
 	netPack := pb.GJ_Net_Pack{}
 	err :=  proto.Unmarshal(body,&netPack)
 	if err != nil {
@@ -539,7 +545,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CA
 }
 
 func PublishBody(inbody []byte,service,clientIP string) (*pb.NetRspInfo,error) {
-	body := inbody[32:]
+	body := inbody
 	netPack := pb.GJ_Net_Pack{}
 	err :=  proto.Unmarshal(body,&netPack)
 	if err != nil {

@@ -7,6 +7,9 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/des"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/binary"
 	"fmt"
 	"google.golang.org/grpc/peer"
@@ -175,7 +178,7 @@ func Decrypt(b []byte,encrptType model.ENCRPTION_TYPE)[]byte{
 	return b
 }
 
-func AesDecrypt(crypted, key []byte) ([]byte, error) {
+func DecryptAes(crypted, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -200,7 +203,7 @@ func PKCS5UnPadding(origData []byte) []byte {
 	return origData[:(length - unpadding)]
 }
 
-func AesEncrypt(origData, key []byte) ([]byte, error) {
+func EncryptAes(origData, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -226,8 +229,8 @@ func unpadding(src []byte) []byte {
 }
 
 func Encrypt3DES(src []byte,key []byte) []byte {
-	block,_:=des.NewTripleDESCipher(key)
-	src=padding(src,block.BlockSize())
+	block,_:= des.NewTripleDESCipher(key)
+	src= padding(src,block.BlockSize())
 	blockmode:=cipher.NewCBCEncrypter(block,key[:block.BlockSize()])
 	blockmode.CryptBlocks(src,src)
 	return src
@@ -241,6 +244,18 @@ func Decrypt3DES(src []byte,key []byte) []byte {
 	return src
 }
 
+func EncryptRsa(originalData,key []byte)([]byte,error){
+	pubKey, _ := x509.ParsePKIXPublicKey(key)
+	encryptedData,err:=rsa.EncryptPKCS1v15(rand.Reader, pubKey.(*rsa.PublicKey), originalData)
+	return encryptedData,err
+}
+
+//（2）解密：对采用sha1算法加密后转base64格式的数据进行解密（私钥PKCS1格式）
+func DecryptRsa(encryptedData,key []byte)([]byte,error){
+	prvKey,_:=x509.ParsePKCS1PrivateKey(key)
+	originalData,err:=rsa.DecryptPKCS1v15(rand.Reader,prvKey,encryptedData)
+	return originalData,err
+}
 
 func GetClietIP(ctx context.Context) (string, error) {
 	pr, ok := peer.FromContext(ctx)
