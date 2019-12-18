@@ -56,7 +56,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 	///保持异步数据到map中
 	StoreAsyncAnswer(callinfo.Sequence,callinfo)
 
-	r, err := c.AsyncCall(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence})
+	r, err := c.AsyncCall(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence,Service:callinfo.Service,Clientip:callinfo.ClientIP})
 
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
 	if err != nil {
@@ -74,9 +74,12 @@ func AsyncCallClient(callinfo model.CallInfo){
 			sResult.IsTimeOut = true
 			if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
 				sResult.IsResend = true
+				//////如果是不丢弃的，超时请求将缓存在队列中
 				TimeoutRequest.PutPoolRequest(callinfo)
 			}else{
 				sResult.IsDisCard = true
+				//////如果是丢弃的，超时后返回队列也将丢弃
+				LoadAsyncAnswer(callinfo.Sequence)
 			}
 		}
 	}
@@ -150,7 +153,7 @@ func AsyncReturnClient(callinfo model.CallInfo){
 	client := pb.NewClientServiceClient(clientconn)
 	var ctxClient context.Context
 	ctxClient = context.Background()
-	_, err = client.AsyncAnswer(ctxClient,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence})
+	_, err = client.AsyncAnswer(ctxClient,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence,Clientip:callinfo.ClientIP,Service:callinfo.Service})
 	if err != nil {
 		log.ErrorWithFields(map[string]interface{}{
 			"func":"AsyncCallClient",
@@ -236,7 +239,7 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	}
 	//////////////////////////////////////////////同步
 
-	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody})
+	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Clientip:callinfo.ClientIP,Service:callinfo.Service,Uuid:callinfo.Sequence})
 	log.Error("======================**************同步")
 	if err != nil {
 		log.Error("======================**************err",err.Error())

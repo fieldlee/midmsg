@@ -26,9 +26,10 @@ message NetReqInfo
 
 message CallReqInfo
 {
-    Net_Pack   m_Body   = 1;     ///请求rpc bytes
-    string     service  = 2;     ///请求的注册服务的名称，只有publish用的到
-    string     uuid     = 3;     ///请求数据uuid
+    Net_Pack   m_Body       = 1;     ///请求rpc bytes
+    string     service      = 2;     ///请求的注册服务的名称，只有publish用的到
+    string     uuid         = 3;     ///请求数据uuid
+    string     clientip     = 4;     ///发送对方的ip
 }
 
 message CallRspInfo

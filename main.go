@@ -12,7 +12,6 @@ import (
 	"midmsg/log"
 	"runtime"
 
-	//"midmsg/model"
 	pb "midmsg/proto"
 	"midmsg/utils"
 	"net"
