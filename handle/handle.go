@@ -2,6 +2,7 @@ package handle
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
@@ -147,17 +148,30 @@ func (m *MsgHandle)Register(ctx context.Context, in *pb.RegisterInfo)(*pb.Regist
 			Success:true,
 		},errors.New(fmt.Sprintf("the %s function had registered",in.Sequence))
 	}
-	err = SqlClient.InsertFunc(in.Sequence)
-	if err != nil{
+	/////保存funcid
+	if _,err := SqlClient.GetFunc(in.Sequence);err != nil && err != sql.ErrNoRows {
 		return nil,err
+	}else{
+		err = SqlClient.InsertFunc(in.Sequence)
+		if err != nil{
+			return nil,err
+		}
 	}
+
+
 	clientIP,err := utils.GetClietIP(ctx)
 	if err != nil{
 		return nil,err
 	}
-	err = SqlClient.InsertFuncList(in.Sequence,fmt.Sprintf("%s:%d",clientIP,utils.ClientPort))
-	if err != nil{
+
+	////保存
+	if _,err := SqlClient.DeleteFunc(in.Sequence,fmt.Sprintf("%s:%d",clientIP,utils.ClientPort));err != nil && err!= sql.ErrNoRows{
 		return nil,err
+	}else{
+		err = SqlClient.InsertFuncList(in.Sequence,fmt.Sprintf("%s:%d",clientIP,utils.ClientPort))
+		if err != nil{
+			return nil,err
+		}
 	}
 
 	loadSeqIP()
@@ -177,10 +191,16 @@ func (m *MsgHandle)Publish(ctx context.Context, in *pb.PublishInfo)(*pb.PublishR
 			Success:true,
 		},errors.New(fmt.Sprintf("the %s service had registered",in.Service))
 	}
-	err = SqlClient.InsertSvc(in.Service)
-	if err != nil {
+
+	if _,err := SqlClient.GetSvc(in.Service);err != nil && err != sql.ErrNoRows{
 		return nil,err
+	}else{
+		err = SqlClient.InsertSvc(in.Service)
+		if err != nil {
+			return nil,err
+		}
 	}
+
 	return &pb.PublishReturnInfo{
 		Success:true,
 	},nil
@@ -428,12 +448,7 @@ func AnzalyBody(inbody []byte,uuid string,syncType model.CALL_CLIENT_TYPE,client
 func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CALL_CLIENT_TYPE,clientIP string,result chan pb.SendResultInfo){
 	tSendResult := pb.SendResultInfo{
 		Key:key,
-		SendCount:netpack.M_MsgBody.MSSendCount,
-		SuccessCount:0,
-		FailCount:0,
-		DiscardCount:0,
-		ReSendCount:0,
-		ResultList:nil,
+		Result:nil,
 		CheckErr:nil,
 	}
 	///check ASK_TYPE
@@ -501,38 +516,15 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CA
 		SyncType:syncType,
 	}
 
-	callResult := make(chan pb.SingleResultInfo,netpack.M_MsgBody.MSSendCount)
-	wait := sync.WaitGroup{}
-	for i  := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
-		wait.Add(1)
-		go call.CallClient(sendInfo,callResult,&wait)
-	}
-	wait.Wait()
+	rspinfo,err := call.CallClient(sendInfo)
 
-	resultList := map[uint32]*pb.SingleResultInfo{}
-	failedCount := int32(0)
-	discardCount := int32(0)
-	resentCount := int32(0)
-
-	for i := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
-		tmpRsult := <- callResult
-		resultList[uint32(i)] = &tmpRsult
-		if tmpRsult.Errinfo != nil {
-			failedCount = failedCount + 1
-		}
-		if tmpRsult.IsDisCard == true {
-			discardCount =  discardCount + 1
-		}
-		if tmpRsult.IsResend == true {
-			resentCount = resentCount + 1
-		}
+	if err != nil {
+		tSendResult.CheckErr = []byte(err.Error())
 	}
-	tSendResult.FailCount  		= failedCount
-	tSendResult.SuccessCount 	= netpack.M_MsgBody.MSSendCount - failedCount
-	tSendResult.ReSendCount 	= resentCount
-	tSendResult.DiscardCount 	= discardCount
-	tSendResult.ResultList      = resultList
+
 	tSendResult.CheckErr = nil
+	tSendResult.Result = rspinfo.M_Net_Rsp
+
 	result <- tSendResult
 	return
 }
@@ -546,16 +538,7 @@ func PublishBody(inbody []byte,service,clientIP string) (*pb.NetRspInfo,error) {
 			M_Err:[]byte(err.Error()),
 		},nil
 	}
-	/******
-	/////// Get Subscribe by service
-	svcAddrs := utils.GetSubscribeByKey(service)
-	if len(svcAddrs)==0 {
-		log.ErrorWithFields(map[string]interface{}{"func":"PublishBody"},"get services error,not address got")
-		return &pb.NetRspInfo{
-			M_Err:[]byte(model.ErrGotService.Error()),
-		},nil
-	}
-	*/
+
 	svcAddrs := SubScribeDetail[service]
 
 	if len(svcAddrs)==0{
@@ -588,13 +571,8 @@ func PublishBody(inbody []byte,service,clientIP string) (*pb.NetRspInfo,error) {
 func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svcAddrs []string,result chan pb.SendResultInfo){
 	tSendResult := pb.SendResultInfo{
 		Key:key,
-		SendCount:netpack.M_MsgBody.MSSendCount,
-		SuccessCount:0,
-		FailCount:0,
-		DiscardCount:0,
-		ReSendCount:0,
-		ResultList:nil,
 		CheckErr:nil,
+		Result:nil,
 	}
 	///check ASK_TYPE
 	if netpack.M_MsgBody.MLAsktype > uint64(model.ETN_SERVER_SUBSRCTIBE_MSG) {
@@ -620,17 +598,10 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 		isDiscard = true
 	}
 
-	//sendBytes,err := proto.Marshal(netpack)
-	//if err != nil {
-	//	tSendResult.CheckErr = []byte(err.Error())
-	//	result <- tSendResult
-	//	return
-	//}
-
 	///// 超时时间
 	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
 	wait := sync.WaitGroup{}
-	callResult := make(chan pb.SingleResultInfo,len(svcAddrs))
+	callResult := make(chan model.BroadcastReturnInfo,len(svcAddrs))
 
 	for _ , tIP := range svcAddrs {
 		address := strings.Split(tIP,":")[0]
@@ -650,35 +621,14 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 			MsgAckType :netpack.M_MsgBody.MCMsgAckType,
 			SyncType:model.CALL_CLIENT_PUBLISH,
 		}
-		//for i  := 0 ; int32(i) < netpack.M_MsgBody.MSSendCount ; i++{
 		wait.Add(1)
-		go call.CallClient(sendInfo,callResult,&wait)
-		//}
+		go call.BroadCastClient(sendInfo,callResult,&wait)
 	}
+
 	wait.Wait()
 
-
-	resultList := make([]pb.SingleResultInfo,0)
-	failedCount := int32(0)
-	discardCount := int32(0)
-	resentCount := int32(0)
-	for tmpRsult := range callResult{
-		resultList = append(resultList,tmpRsult)
-		if tmpRsult.Errinfo != nil {
-			failedCount = failedCount + 1
-		}
-		if tmpRsult.IsDisCard == true {
-			discardCount =  discardCount + 1
-		}
-		if tmpRsult.IsResend == true {
-			resentCount = resentCount + 1
-		}
-	}
-	tSendResult.FailCount  		= failedCount
-	tSendResult.SuccessCount 	= tSendResult.SendCount - failedCount
-	tSendResult.ReSendCount 	= resentCount
-	tSendResult.DiscardCount 	= discardCount
 	tSendResult.CheckErr = nil
+	tSendResult.Result = nil
 	result <- tSendResult
 }
 
@@ -686,13 +636,8 @@ func AsyncAnswer(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CAL
 
 	tSendResult := pb.SendResultInfo{
 		Key:key,
-		SendCount:netpack.M_MsgBody.MSSendCount,
-		SuccessCount:0,
-		FailCount:0,
-		DiscardCount:0,
-		ReSendCount:0,
-		ResultList:nil,
 		CheckErr:nil,
+		Result:nil,
 	}
 	///check ASK_TYPE
 	if netpack.M_MsgBody.MLAsktype > uint64(model.ETN_SERVER_SUBSRCTIBE_MSG) {
@@ -731,23 +676,15 @@ func AsyncAnswer(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CAL
 		SendTimeApp:netpack.M_MsgBody.MISendTimeApp,
 		MsgType :netpack.M_MsgBody.MCMsgType,
 		MsgAckType :netpack.M_MsgBody.MCMsgAckType,
-
 	}
-	resultList := map[uint32]*pb.SingleResultInfo{}
 
-	resultinfo := call.AsyncAnswerClient(sendInfo)
-
-	resultList[0] = resultinfo
-
-	if resultinfo.Errinfo == nil {
-		tSendResult.FailCount = 0
-		tSendResult.SuccessCount = 1
-	}else{
-		tSendResult.FailCount = 1
-		tSendResult.SuccessCount = 0
+	resultinfo,err := call.AsyncAnswerClient(sendInfo)
+	if err != nil {
+		tSendResult.CheckErr = []byte(err.Error())
 	}
-	tSendResult.ResultList  = resultList
+
 	tSendResult.CheckErr = nil
+	tSendResult.Result = resultinfo.M_Net_Rsp
 	result <- tSendResult
 	return
 }

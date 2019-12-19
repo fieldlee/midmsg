@@ -38,7 +38,13 @@ func (c *CallInfoPool)CallPoolRequest(){
 	c.mux.Unlock()
 
 	for _,v := range list {
-		CallClient(v,nil,nil)
+		_,err := CallClient(v)
+		if err != nil {
+			if v.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
+				//////如果是不丢弃的，超时请求将缓存在队列中
+				TimeoutRequest.PutPoolRequest(v)
+			}
+		}
 	}
 }
 
@@ -49,7 +55,10 @@ func (p *AsyncReturnPool) CallPoolAsyncReturn(){
 	p.mux.Unlock()
 
 	for _,v := range list {
-		AsyncReturnClient(v)
+		_,err := AsyncAnswerClient(v)
+		if err != nil {
+			AsyncReturn.PutPoolAsyncReturn(v)
+		}
 	}
 }
 

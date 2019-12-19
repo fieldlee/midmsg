@@ -45,27 +45,27 @@ message NetRspInfo
 
 message SendResultInfo  {
     uint32          Key = 1;
-    int32     SendCount = 2;       // 发送的数量
-    int32  SuccessCount = 3;       //  成功的数量
-    int32     FailCount = 4;       //  失败的数量
-    int32  DiscardCount = 5;       //  丢弃的数量
-    int32   ReSendCount = 6;       //  重发的数量
-    bytes 	   CheckErr = 7;       //  校验发生的错误
-    map<uint32,SingleResultInfo>  ResultList = 8;    // 每个请求的处理结果
+//    int32     SendCount = 2;       // 发送的数量
+//    int32  SuccessCount = 3;       //  成功的数量
+//    int32     FailCount = 4;       //  失败的数量
+//    int32  DiscardCount = 5;       //  丢弃的数量
+//    int32   ReSendCount = 6;       //  重发的数量
+    bytes 	   CheckErr = 2;       //  校验发生的错误
+    bytes        Result = 3;    // 每个请求的处理结果
 }
 
-message SingleResultInfo  {
-    uint64  AskSequence = 1;      // 客户端生成的ask 序列号
-    uint64  SendTimeApp = 2;      // 客户端生成的时间序
-    int32   MsgType     = 3;      // message 类型
-    int32   MsgAckType  = 4;      // ack message 类型
-    uint32  SyncType    = 5;	  ///// 0 同步  1 异步
- 	bool    IsTimeOut   = 6;
-    bool    IsDisCard   = 7;
-    bool    IsResend    = 8;
-	bytes   Errinfo     = 9;
- 	bytes   Result      = 10;
-}
+//message SingleResultInfo  {
+//    uint64  AskSequence = 1;      // 客户端生成的ask 序列号
+//    uint64  SendTimeApp = 2;      // 客户端生成的时间序
+//    int32   MsgType     = 3;      // message 类型
+//    int32   MsgAckType  = 4;      // ack message 类型
+//    uint32  SyncType    = 5;	  ///// 0 同步  1 异步
+// 	bool    IsTimeOut   = 6;
+//    bool    IsDisCard   = 7;
+//    bool    IsResend    = 8;
+//	bytes   Errinfo     = 9;
+// 	bytes   Result      = 10;
+//}
 
 message GJ_Net_Pack
 {

@@ -13,25 +13,17 @@ import (
 )
 
 ////////// 异步调用客户端的call接口
-func AsyncCallClient(callinfo model.CallInfo)*pb.SingleResultInfo{
+func AsyncCallClient(callinfo model.CallInfo)(*pb.CallRspInfo,error){
 	log.Trace("AsyncCallClient")
-	sResult := &pb.SingleResultInfo{
-		AskSequence:callinfo.AskSequence,
-		SendTimeApp:callinfo.SendTimeApp,
-		MsgType:	callinfo.MsgType,
-		MsgAckType:	callinfo.MsgAckType,
-		SyncType:	uint32(callinfo.SyncType),
-		IsTimeOut:false,
-		IsDisCard:false,
-		IsResend:false,
-		Errinfo:nil,
-		Result:nil,
-	}
+
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
-		sResult.Errinfo = []byte(fmt.Errorf("client connect err :%s",err.Error()).Error())
-		return sResult
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
+			//////如果是不丢弃的，超时请求将缓存在队列中
+			TimeoutRequest.PutPoolRequest(callinfo)
+		}
+		return nil,err
 	}
 	defer conn.Close()
 
@@ -53,10 +45,12 @@ func AsyncCallClient(callinfo model.CallInfo)*pb.SingleResultInfo{
 
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
 	if err != nil {
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
+			//////如果是不丢弃的，超时请求将缓存在队列中
+			TimeoutRequest.PutPoolRequest(callinfo)
+		}
 		log.Error("======================**************err",err.Error())
-		sResult.Errinfo = []byte(fmt.Errorf("async err :%s",err.Error()).Error())
-	}else{
-		sResult.Result = r.M_Net_Rsp
+		return nil,err
 	}
 
 	////////////////////超时处理
@@ -64,88 +58,40 @@ func AsyncCallClient(callinfo model.CallInfo)*pb.SingleResultInfo{
 		select {
 		case <-ctx.Done():
 			log.Error(ctx.Err()) // 超时处理
-			sResult.IsTimeOut = true
+
 			if callinfo.IsDiscard != true { ///// 超时了不可丢弃放在 重新发送的pool里
-				sResult.IsResend = true
 				//////如果是不丢弃的，超时请求将缓存在队列中
 				TimeoutRequest.PutPoolRequest(callinfo)
 			}else{
-				sResult.IsDisCard = true
 				//////如果是丢弃的，超时后返回队列也将丢弃
 				LoadAsyncAnswer(callinfo.Sequence)
 			}
-			sResult.Errinfo = []byte(fmt.Errorf("timeout err:%s",ctx.Err().Error()).Error())
-			return sResult
+			return nil,fmt.Errorf("timeout err:%s",ctx.Err().Error())
 		}
 	}
 
-	/////////////////////////////调用call async rsp////////////////////////////////////////////////////////////
-	//log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
-	//clientAddr := fmt.Sprintf("%v:%d",callinfo.ClientIP,utils.ClientPort)
-	//
-	///////获取grpc pool
-	////clientpool := GetCache(clientAddr)
-	////if clientpool == nil {
-	////	return
-	////}
-	////clientconn,err:= clientpool.Get()
-	////if err != nil {
-	////	return
-	////}
-	//clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
-	//if err != nil {
-	//	return
-	//}
-	//defer clientconn.Close()
-	//
-	//client 		:= pb.NewClientServiceClient(clientconn)
-	//ctxClient 	:= context.Background()
-	//_, err = client.AsyncCall(ctxClient,&sResult)
-	//if err != nil {
-	//	log.ErrorWithFields(map[string]interface{}{
-	//		"func":"AsyncCallClient",
-	//	},"======================**************AsyncCallClient Err:",err.Error())
-	//
-	//	////////////将发送失败的异步请求的处理结果，缓存起来
-	//	returninfo := model.AsyncReturnInfo{
-	//		ClientIP:callinfo.ClientIP,
-	//		SResult:sResult,
-	//	}
-	//	AsyncReturn.PutPoolAsyncReturn(returninfo)
-	//}
-	sResult.Errinfo = nil
-	return sResult
+	return r,nil
 }
 ///////////// 异步处理结果失败后，再发起call
-func AsyncAnswerClient(callinfo model.CallInfo)*pb.SingleResultInfo{
-	sResult := &pb.SingleResultInfo{
-		AskSequence:callinfo.AskSequence,
-		SendTimeApp:callinfo.SendTimeApp,
-		MsgType:	callinfo.MsgType,
-		MsgAckType:	callinfo.MsgAckType,
-		SyncType:	uint32(callinfo.SyncType),
-		IsTimeOut:false,
-		IsDisCard:false,
-		IsResend:false,
-		Errinfo:nil,
-		Result:nil,
-	}
+func AsyncAnswerClient(callinfo model.CallInfo)(*pb.CallRspInfo,error){
+
 	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
 	log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
 
 	loadCallInfo := LoadAsyncAnswer(callinfo.Sequence)
 
 	if loadCallInfo.ClientIP == "" {
-		sResult.Errinfo = []byte(fmt.Errorf("return info lost ").Error())
-		return sResult
+		return nil,fmt.Errorf("return info lost ")
 	}
 
 	clientAddr := fmt.Sprintf("%v:%d",loadCallInfo.ClientIP,utils.ClientPort)
 
 	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	if err != nil {
-		sResult.Errinfo = []byte(fmt.Errorf("client connect err :%s ",err.Error()).Error())
-		return sResult
+		////////////将发送失败的异步请求的处理结果，缓存起来
+		go AsyncReturn.PutPoolAsyncReturn(callinfo)
+
+		return nil,err
 	}
 	defer clientconn.Close()
 
@@ -157,71 +103,32 @@ func AsyncAnswerClient(callinfo model.CallInfo)*pb.SingleResultInfo{
 		log.ErrorWithFields(map[string]interface{}{
 			"func":"AsyncCallClient",
 		},"======================**************AsyncCallClient Err:",err.Error())
-		sResult.Errinfo = []byte(fmt.Errorf(" err :%s ",err.Error()).Error())
 		////////////将发送失败的异步请求的处理结果，缓存起来
 		go AsyncReturn.PutPoolAsyncReturn(callinfo)
+
+		return nil , err
 	}
-	sResult.Errinfo = nil
-	sResult.Result = callresult.M_Net_Rsp
-	return sResult
+	return callresult,nil
 }
 
-func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait *sync.WaitGroup){
-	if wait != nil {
-		defer wait.Done()
-	}
-
-	sResult := pb.SingleResultInfo{
-		AskSequence:callinfo.AskSequence,
-		SendTimeApp:callinfo.SendTimeApp,
-		MsgType:callinfo.MsgType,
-		MsgAckType:callinfo.MsgAckType,
-		SyncType:uint32(callinfo.SyncType),
-		IsTimeOut:false,
-		IsDisCard:false,
-		IsResend:false,
-		Errinfo:nil,
-		Result:nil,
-	}
+func CallClient(callinfo model.CallInfo)(*pb.CallRspInfo,error){
 
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
 
 	log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client address:",caddr)
 
-	if sResult.SyncType == uint32(model.CALL_CLIENT_ASYNC) { ///// 异步
-		calResult := AsyncCallClient(callinfo)
-		tResult <- *calResult
-		return
+	if callinfo.SyncType == model.CALL_CLIENT_ASYNC { ///// 异步
+		return AsyncCallClient(callinfo)
 	}
 
+	///////////////////////同步操作===========================
 
-	//////获得grpc池
-	//pool := GetCache(caddr)
-	//if pool == nil {
-	//	if tResult != nil {
-	//		sResult.Errinfo = []byte("get GRPC pool is nil")
-	//		tResult <- sResult
-	//	}
-	//	return
-	//}
-	//conn, err := pool.Get()
-	//if err != nil {
-	//	log.Error("err",err.Error())
-	//	if tResult != nil {
-	//		sResult.Errinfo = []byte(err.Error())
-	//		tResult <- sResult
-	//	}
-	//	return
-	//}
-	//
-	//defer pool.Put(conn)
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
-		if tResult != nil {
-			sResult.Errinfo = []byte(err.Error())
-			tResult <- sResult
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+			TimeoutRequest.PutPoolRequest(callinfo)
 		}
-		return
+		return nil,err
 	}
 	defer conn.Close()
 
@@ -240,22 +147,11 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	log.Error("======================**************同步")
 	if err != nil {
 		log.Error("======================**************err",err.Error())
-		if tResult != nil {
-			sResult.Errinfo = []byte(err.Error())
-			tResult <- sResult
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+			TimeoutRequest.PutPoolRequest(callinfo)
 		}
-		return
-	}else{
-		if tResult != nil {
-			//log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client return value:",string(r.M_Net_Rsp))
-			//////// 是否将结果返回到客户端  服务器等  /0 无需回复, 1 回复到发送方, 2 回复到离线服务器
-			if sResult.MsgAckType  == 1 {
-				sResult.Result = r.M_Net_Rsp
-			}
-			sResult.Errinfo = nil
-			tResult <- sResult
-		}
-		return
+
+		return nil,err
 	}
 	////////////////////超时处理
 	select {
@@ -263,28 +159,66 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
 			TimeoutRequest.PutPoolRequest(callinfo)
 			//////////丢弃了
-			if tResult != nil {
-				sResult.IsResend = true
-			}
-		}else{
-			//////////丢弃了
-			if tResult != nil {
-				sResult.IsDisCard = true
-			}
 		}
-		if tResult != nil {
-			sResult.Result = nil
-			sResult.IsTimeOut = true
-			sResult.Errinfo = []byte(ctx.Err().Error())
-			tResult <- sResult
+		return  nil,fmt.Errorf("timeout")
+	}
+	return r,nil
+}
+
+func BroadCastClient(callinfo model.CallInfo,rsp chan model.BroadcastReturnInfo,wait *sync.WaitGroup){
+	defer wait.Done()
+	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
+	log.DebugWithFields(map[string]interface{}{"func":"BroadCastClient"},"broadcast client address:",caddr)
+
+	callRsp := model.BroadcastReturnInfo{
+		SResult:nil,
+		SErr:nil,
+	}
+
+	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
+	if err != nil {
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+			TimeoutRequest.PutPoolRequest(callinfo)
 		}
+		callRsp.SErr = err
+		rsp <- callRsp
 		return
 	}
-	if tResult != nil {
-		sResult.Result = nil
-		sResult.IsTimeOut = false
-		sResult.Errinfo = nil
-		tResult <- sResult
+	defer conn.Close()
+
+	c := pb.NewClientServiceClient(conn)
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if callinfo.Timeout > time.Second *0 {
+		ctx, cancel = context.WithTimeout(context.Background(), callinfo.Timeout)
+		defer cancel()
+	}else{
+		ctx = context.Background()
 	}
+	//////////////////////////////////////////////同步
+
+	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Clientip:callinfo.ClientIP,Service:callinfo.Service,Uuid:callinfo.Sequence})
+	log.Error("======================**************同步")
+	if err != nil {
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+			TimeoutRequest.PutPoolRequest(callinfo)
+		}
+		log.Error("======================**************err",err.Error())
+		callRsp.SErr = err
+		rsp <- callRsp
+		return
+	}
+	////////////////////超时处理
+	select {
+	case <-ctx.Done():
+		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+			TimeoutRequest.PutPoolRequest(callinfo)
+		}
+		callRsp.SErr = fmt.Errorf("request timeout")
+		rsp <- callRsp
+		return
+	}
+	callRsp.SResult = r
+	callRsp.SErr = nil
 	return
 }

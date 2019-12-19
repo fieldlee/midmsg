@@ -41,6 +41,61 @@ func (s *SqlCliet)InsertFunc(funcId string)error{
 	return nil
 }
 
+func (s *SqlCliet)DeleteFunc(funcId,ip string)(int64,error){
+	stmt, err := s.DB.Prepare(`DELETE FROM func WHERE funcid=? and `)
+	defer stmt.Close()
+	if err != nil {
+		return 0,err
+	}
+	res, err := stmt.Exec(funcId)
+	if err != nil {
+		return 0,err
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		return 0,err
+	}
+	return num,nil
+}
+
+func (s *SqlCliet)DeleteFuncById(funcId string)(int64,error){
+	stmt, err := s.DB.Prepare(`DELETE FROM func WHERE funcid=?`)
+	defer stmt.Close()
+	if err != nil {
+		return 0,err
+	}
+	res, err := stmt.Exec(funcId)
+	if err != nil {
+		return 0,err
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		return 0,err
+	}
+	return num,nil
+}
+
+
+func (s *SqlCliet)DeleteFuncList(funcId,ip string)(int64,error){
+	stmt, err := s.DB.Prepare(`DELETE FROM funclist WHERE funcid=? and ip =?`)
+	defer stmt.Close()
+	if err != nil {
+		return 0,err
+	}
+	res, err := stmt.Exec(funcId,ip)
+	if err != nil {
+		return 0,err
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		return 0,err
+	}
+	return num,nil
+}
+
 func (s *SqlCliet)GetFunc(funcId string)(string,error){
 	stmt,err := s.DB.Prepare("select funcid from func where funcid = ?")
 	defer stmt.Close()
