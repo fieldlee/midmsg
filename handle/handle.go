@@ -532,7 +532,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CA
 	tSendResult.ReSendCount 	= resentCount
 	tSendResult.DiscardCount 	= discardCount
 	tSendResult.ResultList      = resultList
-
+	tSendResult.CheckErr = nil
 	result <- tSendResult
 	return
 }
@@ -678,7 +678,7 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 	tSendResult.SuccessCount 	= tSendResult.SendCount - failedCount
 	tSendResult.ReSendCount 	= resentCount
 	tSendResult.DiscardCount 	= discardCount
-
+	tSendResult.CheckErr = nil
 	result <- tSendResult
 }
 
@@ -747,7 +747,7 @@ func AsyncAnswer(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CAL
 		tSendResult.SuccessCount = 0
 	}
 	tSendResult.ResultList  = resultList
-
+	tSendResult.CheckErr = nil
 	result <- tSendResult
 	return
 }
