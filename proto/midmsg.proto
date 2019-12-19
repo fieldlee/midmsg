@@ -93,9 +93,7 @@ message Net_Pack
 }
 
 message RegisterInfo{
-    string  ip          = 1;    // 注册地址
-    string  port        = 2;    // 注册端口
-    string  sequence    = 3;    // 功能号
+    string  sequence    = 1;    // 功能号
 }
 
 message RegisterReturnInfo{
@@ -104,9 +102,7 @@ message RegisterReturnInfo{
 }
 
 message SubscribeInfo{
-    string  ip          = 1;    // 订阅地址
-    string  port        = 2;    // 订阅端口
-    string  service     = 3;    // 订阅服务号
+    string  service     = 1;    // 订阅服务号
 }
 
 message SubscribeReturnInfo{

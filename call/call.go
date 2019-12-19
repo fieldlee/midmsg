@@ -13,21 +13,25 @@ import (
 )
 
 ////////// 异步调用客户端的call接口
-func AsyncCallClient(callinfo model.CallInfo){
+func AsyncCallClient(callinfo model.CallInfo)*pb.SingleResultInfo{
 	log.Trace("AsyncCallClient")
+	sResult := &pb.SingleResultInfo{
+		AskSequence:callinfo.AskSequence,
+		SendTimeApp:callinfo.SendTimeApp,
+		MsgType:	callinfo.MsgType,
+		MsgAckType:	callinfo.MsgAckType,
+		SyncType:	uint32(callinfo.SyncType),
+		IsTimeOut:false,
+		IsDisCard:false,
+		IsResend:false,
+		Errinfo:nil,
+		Result:nil,
+	}
 	caddr := fmt.Sprintf("%v:%v",callinfo.Address,callinfo.Port)
-	/////获取grpc pool
-	//pool := GetCache(caddr)
-	//if pool == nil {
-	//	return
-	//}
-	//conn,err:= pool.Get()
-	//if err != nil{
-	//	return
-	//}
 	conn, err := grpc.Dial(caddr, grpc.WithInsecure())
 	if err != nil {
-		return
+		sResult.Errinfo = []byte(fmt.Errorf("client connect err :%s",err.Error()).Error())
+		return sResult
 	}
 	defer conn.Close()
 
@@ -41,18 +45,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 		ctx = context.Background()
 	}
 
-	sResult := pb.SingleResultInfo{
-		AskSequence:callinfo.AskSequence,
-		SendTimeApp:callinfo.SendTimeApp,
-		MsgType:	callinfo.MsgType,
-		MsgAckType:	callinfo.MsgAckType,
-		SyncType:	uint32(callinfo.SyncType),
-		IsTimeOut:false,
-		IsDisCard:false,
-		IsResend:false,
-		Errinfo:nil,
-		Result:nil,
-	}
+
 	///保持异步数据到map中
 	StoreAsyncAnswer(callinfo.Sequence,callinfo)
 
@@ -61,7 +54,7 @@ func AsyncCallClient(callinfo model.CallInfo){
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
 	if err != nil {
 		log.Error("======================**************err",err.Error())
-		sResult.Errinfo = []byte(err.Error())
+		sResult.Errinfo = []byte(fmt.Errorf("async err :%s",err.Error()).Error())
 	}else{
 		sResult.Result = r.M_Net_Rsp
 	}
@@ -81,6 +74,8 @@ func AsyncCallClient(callinfo model.CallInfo){
 				//////如果是丢弃的，超时后返回队列也将丢弃
 				LoadAsyncAnswer(callinfo.Sequence)
 			}
+			sResult.Errinfo = []byte(fmt.Errorf("timeout err:%s",ctx.Err().Error()).Error())
+			return sResult
 		}
 	}
 
@@ -118,51 +113,57 @@ func AsyncCallClient(callinfo model.CallInfo){
 	//	}
 	//	AsyncReturn.PutPoolAsyncReturn(returninfo)
 	//}
-
-	return
+	sResult.Errinfo = nil
+	return sResult
 }
 ///////////// 异步处理结果失败后，再发起call
-func AsyncReturnClient(callinfo model.CallInfo){
+func AsyncAnswerClient(callinfo model.CallInfo)*pb.SingleResultInfo{
+	sResult := &pb.SingleResultInfo{
+		AskSequence:callinfo.AskSequence,
+		SendTimeApp:callinfo.SendTimeApp,
+		MsgType:	callinfo.MsgType,
+		MsgAckType:	callinfo.MsgAckType,
+		SyncType:	uint32(callinfo.SyncType),
+		IsTimeOut:false,
+		IsDisCard:false,
+		IsResend:false,
+		Errinfo:nil,
+		Result:nil,
+	}
 	///////////////////////////调用call async rsp////////////////////////////////////////////////////////////
 	log.Trace("callinfo.ClientIP:",callinfo.ClientIP,"utils.ClientPort:",utils.ClientPort)
 
 	loadCallInfo := LoadAsyncAnswer(callinfo.Sequence)
 
 	if loadCallInfo.ClientIP == "" {
-		return
+		sResult.Errinfo = []byte(fmt.Errorf("return info lost ").Error())
+		return sResult
 	}
 
 	clientAddr := fmt.Sprintf("%v:%d",loadCallInfo.ClientIP,utils.ClientPort)
 
-	/////获取grpc pool
-	//clientpool := GetCache(clientAddr)
-	//if clientpool == nil {
-	//	return
-	//}
-	//clientconn,err := clientpool.Get()
-	//if err != nil {
-	//	return
-	//}
-
 	clientconn, err := grpc.Dial(clientAddr, grpc.WithInsecure())
 	if err != nil {
-		return
+		sResult.Errinfo = []byte(fmt.Errorf("client connect err :%s ",err.Error()).Error())
+		return sResult
 	}
 	defer clientconn.Close()
 
 	client := pb.NewClientServiceClient(clientconn)
 	var ctxClient context.Context
 	ctxClient = context.Background()
-	_, err = client.AsyncAnswer(ctxClient,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence,Clientip:callinfo.ClientIP,Service:callinfo.Service})
+	callresult, err := client.AsyncAnswer(ctxClient,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence,Clientip:callinfo.ClientIP,Service:callinfo.Service})
 	if err != nil {
 		log.ErrorWithFields(map[string]interface{}{
 			"func":"AsyncCallClient",
 		},"======================**************AsyncCallClient Err:",err.Error())
-
+		sResult.Errinfo = []byte(fmt.Errorf(" err :%s ",err.Error()).Error())
 		////////////将发送失败的异步请求的处理结果，缓存起来
 		go AsyncReturn.PutPoolAsyncReturn(callinfo)
 	}
-	return
+	sResult.Errinfo = nil
+	sResult.Result = callresult.M_Net_Rsp
+	return sResult
 }
 
 func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait *sync.WaitGroup){
@@ -188,12 +189,8 @@ func CallClient(callinfo model.CallInfo, tResult chan pb.SingleResultInfo, wait 
 	log.DebugWithFields(map[string]interface{}{"func":"CallClient"},"call client address:",caddr)
 
 	if sResult.SyncType == uint32(model.CALL_CLIENT_ASYNC) { ///// 异步
-		/// 异步调用goroutine
-		go AsyncCallClient(callinfo)
-		if tResult != nil {
-			sResult.Errinfo = nil
-			tResult <- sResult
-		}
+		calResult := AsyncCallClient(callinfo)
+		tResult <- *calResult
 		return
 	}
 

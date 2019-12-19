@@ -361,6 +361,7 @@ func PrintCh(){
 	}
 	fmt.Println()
 }
+
 func BytesTOCh(b []byte){
 	for len(b)>0{
 		ch,s := utf8.DecodeRune(b)

@@ -22,6 +22,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/micro/go-micro v1.17.1
+	github.com/pborman/uuid v1.2.0
 	github.com/prometheus/tsdb v0.7.1 // indirect
 	github.com/rogpeppe/go-internal v1.5.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
