@@ -67,6 +67,8 @@ func AsyncCallClient(callinfo model.CallInfo)(*pb.CallRspInfo,error){
 				LoadAsyncAnswer(callinfo.Sequence)
 			}
 			return nil,fmt.Errorf("timeout err:%s",ctx.Err().Error())
+		default:
+			return r,nil
 		}
 	}
 
@@ -154,13 +156,17 @@ func CallClient(callinfo model.CallInfo)(*pb.CallRspInfo,error){
 		return nil,err
 	}
 	////////////////////超时处理
-	select {
-	case <-ctx.Done():
-		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
-			TimeoutRequest.PutPoolRequest(callinfo)
-			//////////丢弃了
+	if callinfo.Timeout > time.Second *0 {
+		select {
+		case <-ctx.Done():
+			if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+				TimeoutRequest.PutPoolRequest(callinfo)
+				//////////丢弃了
+			}
+			return  nil,fmt.Errorf("timeout")
+		default:
+			return r,nil
 		}
-		return  nil,fmt.Errorf("timeout")
 	}
 	return r,nil
 }
@@ -198,7 +204,7 @@ func BroadCastClient(callinfo model.CallInfo,rsp chan model.BroadcastReturnInfo,
 	//////////////////////////////////////////////同步
 
 	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Clientip:callinfo.ClientIP,Service:callinfo.Service,Uuid:callinfo.Sequence})
-	log.Error("======================**************同步")
+	log.Error("======================**************广播")
 	if err != nil {
 		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
 			TimeoutRequest.PutPoolRequest(callinfo)
@@ -209,14 +215,20 @@ func BroadCastClient(callinfo model.CallInfo,rsp chan model.BroadcastReturnInfo,
 		return
 	}
 	////////////////////超时处理
-	select {
-	case <-ctx.Done():
-		if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
-			TimeoutRequest.PutPoolRequest(callinfo)
+	if callinfo.Timeout > time.Second *0 {
+		select {
+		case <-ctx.Done():
+			if callinfo.IsDiscard != true { ///// 超时了不可丢弃放到 重新发送的pool里
+				TimeoutRequest.PutPoolRequest(callinfo)
+			}
+			callRsp.SErr = fmt.Errorf("request timeout")
+			rsp <- callRsp
+			return
+		default:
+			callRsp.SResult = r
+			callRsp.SErr = nil
+			return
 		}
-		callRsp.SErr = fmt.Errorf("request timeout")
-		rsp <- callRsp
-		return
 	}
 	callRsp.SResult = r
 	callRsp.SErr = nil

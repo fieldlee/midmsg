@@ -41,24 +41,6 @@ func (s *SqlCliet)InsertFunc(funcId string)error{
 	return nil
 }
 
-func (s *SqlCliet)DeleteFunc(funcId,ip string)(int64,error){
-	stmt, err := s.DB.Prepare(`DELETE FROM func WHERE funcid=? and `)
-	defer stmt.Close()
-	if err != nil {
-		return 0,err
-	}
-	res, err := stmt.Exec(funcId)
-	if err != nil {
-		return 0,err
-	}
-
-	num, err := res.RowsAffected()
-	if err != nil {
-		return 0,err
-	}
-	return num,nil
-}
-
 func (s *SqlCliet)DeleteFuncById(funcId string)(int64,error){
 	stmt, err := s.DB.Prepare(`DELETE FROM func WHERE funcid=?`)
 	defer stmt.Close()
@@ -77,24 +59,6 @@ func (s *SqlCliet)DeleteFuncById(funcId string)(int64,error){
 	return num,nil
 }
 
-
-func (s *SqlCliet)DeleteFuncList(funcId,ip string)(int64,error){
-	stmt, err := s.DB.Prepare(`DELETE FROM funclist WHERE funcid=? and ip =?`)
-	defer stmt.Close()
-	if err != nil {
-		return 0,err
-	}
-	res, err := stmt.Exec(funcId,ip)
-	if err != nil {
-		return 0,err
-	}
-
-	num, err := res.RowsAffected()
-	if err != nil {
-		return 0,err
-	}
-	return num,nil
-}
 
 func (s *SqlCliet)GetFunc(funcId string)(string,error){
 	stmt,err := s.DB.Prepare("select funcid from func where funcid = ?")
@@ -130,6 +94,46 @@ func (s *SqlCliet)InsertFuncList(funcId string,ip string)error{
 		return err
 	}
 	return nil
+}
+
+func (s *SqlCliet)DeleteFuncList(funcId,ip string)(int64,error){
+	stmt, err := s.DB.Prepare(`DELETE FROM funclist WHERE funcid=? and ip =?`)
+	defer stmt.Close()
+	if err != nil {
+		return 0,err
+	}
+	res, err := stmt.Exec(funcId,ip)
+	if err != nil {
+		return 0,err
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		return 0,err
+	}
+	return num,nil
+}
+
+func (s *SqlCliet)GetFuncListByIP(funcId,ip string)(string,error){
+	stmt,err := s.DB.Prepare("select ip from funclist where funcid = ? and ip=?")
+	defer stmt.Close()
+	if err != nil {
+		return "", err
+	}
+	row := stmt.QueryRow(funcId,ip)
+	if row != nil {
+		var ip string
+		err = row.Scan(&ip)
+		if err != nil {
+			if sql.ErrNoRows == err {
+				return "",nil
+			}
+			return "" , err
+		}
+		return ip,nil
+	}else{
+		return "" , errors.New("the funcid in funclist table not exist")
+	}
 }
 
 func (s *SqlCliet)GetFuncList(funcId string)(string,error){

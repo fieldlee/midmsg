@@ -165,12 +165,19 @@ func (m *MsgHandle)Register(ctx context.Context, in *pb.RegisterInfo)(*pb.Regist
 	}
 
 	////保存
-	if _,err := SqlClient.DeleteFunc(in.Sequence,fmt.Sprintf("%s:%d",clientIP,utils.ClientPort));err != nil && err!= sql.ErrNoRows{
+
+	if ip,err := SqlClient.GetFuncListByIP(in.Sequence,fmt.Sprintf("%s:%d",clientIP,utils.ClientPort));err != nil && err!= sql.ErrNoRows{
 		return nil,err
 	}else{
-		err = SqlClient.InsertFuncList(in.Sequence,fmt.Sprintf("%s:%d",clientIP,utils.ClientPort))
-		if err != nil{
-			return nil,err
+		if ip == ""{
+			err = SqlClient.InsertFuncList(in.Sequence,fmt.Sprintf("%s:%d",clientIP,utils.ClientPort))
+			if err != nil{
+				return nil,err
+			}
+		}else{
+			return &pb.RegisterReturnInfo{
+				Success:true,
+			},errors.New(fmt.Sprintf("the %s function had registered",in.Sequence))
 		}
 	}
 
@@ -267,7 +274,9 @@ func ModifyBody(inbody []byte, info *model.HeadInfo)[]byte{
 
 func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 	headinfo := model.HeadInfo{}
-
+	if len(inbody) < 32 { ////校验包的长度，必须大于32
+		return nil,fmt.Errorf("the package bytes length too short.")
+	}
 	bodyHead := inbody[:32]
 	//包头标示  8
 	m_tag := bodyHead[:8]
@@ -298,7 +307,7 @@ func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 	bodyHead = bodyHead[2:]
 	headLength := utils.BytesToInt16(m_sHeadLength)
 	//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"headLength:",headLength)
-	////check head length
+	//check head length
 	if headLength != 32 {
 		return nil,model.ErrHeaderLength
 	}
@@ -362,9 +371,9 @@ func AnzalyBodyHead(inbody []byte) (*model.HeadInfo,error) {
 	m_lUncompressedSize := bodyHead[:4]
 	bodyHead = bodyHead[4:]
 	uncompressiondSize := utils.BytesToInt32(m_lUncompressedSize)
-
+	//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBodyHead"},"uncompressiondSize:",uncompressiondSize)
 	//////如果压缩，解压然后比较长度
-	if compressionWay == uint8(model.Compression_zip){
+	if model.COMPRESS_TYPE(compressionWay) == model.Compression_zip{
 		unzipBytes,_:=utils.UnzipByte(inbody[32:])
 		if uncompressiondSize != int32(len(unzipBytes)){
 			return nil,model.ErrUNCompressedLength
@@ -399,47 +408,18 @@ func AnzalyBody(inbody []byte,uuid string,syncType model.CALL_CLIENT_TYPE,client
 	singleResult := make(chan pb.SendResultInfo,len(netPack.M_Net_Pack))
 
 	for key,_ := range netPack.M_Net_Pack {
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"net pack key:",key)
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MCMsgAckType:",pack.M_MsgBody.MCMsgAckType)
-		////model.MSG_TYPE_
-		////fmt.Println("pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)  ///// 消息类型
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MCMsgType:",pack.M_MsgBody.MCMsgType)
-		////fmt.Println("pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)  ///请求可否丢弃// 0：可丢弃 1：不可丢弃
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MIDiscard:",pack.M_MsgBody.MIDiscard)
-		////fmt.Println("pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp) ////开始请求的本地时间戳
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MISendTimeApp:",pack.M_MsgBody.MISendTimeApp)
-		////fmt.Println("pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence) ////客户请求序列，客户端维护
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLAskSequence:",pack.M_MsgBody.MLAskSequence)
-		////model.ASK_TYPE
-		////fmt.Println("pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)  /// 服务端请求类型
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLAsktype:",pack.M_MsgBody.MLAsktype)
-		////fmt.Println("pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack) /////默认为0
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLBack:",pack.M_MsgBody.MLBack)
-		////fmt.Println("pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)  ////过期时间  0：永不过期 >0:过期时间，以m_iSendTimeApp为基本
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLExpireTime:",pack.M_MsgBody.MLExpireTime)
-		////fmt.Println("pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)  /////0：成功 非0：失败
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MLResult:",pack.M_MsgBody.MLResult)
-		////fmt.Println("pack.M_MsgBody.MLServerSequence:",pack.M_MsgBody.MLServerSequence) ////服务响应序列(预留)
-		//log.TraceWithFields(map[string]interface{}{"func":"AnzalyBody"},"pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)
-		//fmt.Println("pack.M_MsgBody.MSSendCount:",pack.M_MsgBody.MSSendCount)  //// 同一请求次数
-
-
 		if syncType == model.CALL_CLIENT_ANSWER { /////异步回答
 			go AsyncAnswer(key ,netPack.M_Net_Pack[key],uuid,syncType,clientIP,singleResult)
 		}else{  /////同步请求
 			go CheckAndSend(key ,netPack.M_Net_Pack[key],uuid,syncType,clientIP,singleResult)
 		}
-
-
 	}
-
 	defer close(singleResult)
 	/////读取返回值
 	for i := 0;i<len(netPack.M_Net_Pack);i++{
 		tmpResult := <- singleResult
 		collectResult[tmpResult.Key] = &tmpResult
 	}
-
 	return &pb.NetRspInfo{
 		M_Net_Rsp:collectResult,
 	},nil
@@ -482,6 +462,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CA
 	service := sevices["service"].(string)
 	 */
 	tempIP := SeqIP[fmt.Sprintf("%d",netpack.M_MsgBody.MLAsktype)]
+	tempIP = "127.0.0.1:8989"
 	if tempIP == "" {
 		tSendResult.CheckErr = []byte(errors.New(fmt.Sprintf("the %d sequence not found address",netpack.M_MsgBody.MLAsktype)).Error())
 		result <- tSendResult
@@ -491,12 +472,6 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CA
 	port := strings.Split(tempIP,":")[1]
 	service := ""
 
-	//sendBytes,err := proto.Marshal(netpack)
-	//if err != nil {
-	//	tSendResult.CheckErr = []byte(err.Error())
-	//	result <- tSendResult
-	//	return
-	//}
 	///// 超时时间
 	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
 
@@ -626,6 +601,10 @@ func CheckAndPublish(key uint32,netpack *pb.Net_Pack,clientIP,service string,svc
 	}
 
 	wait.Wait()
+
+	for _,_ = range svcAddrs{
+		<- callResult
+	}
 
 	tSendResult.CheckErr = nil
 	tSendResult.Result = nil
