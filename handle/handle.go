@@ -462,7 +462,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CA
 	service := sevices["service"].(string)
 	 */
 	tempIP := SeqIP[fmt.Sprintf("%d",netpack.M_MsgBody.MLAsktype)]
-	tempIP = "127.0.0.1:8989"
+
 	if tempIP == "" {
 		tSendResult.CheckErr = []byte(errors.New(fmt.Sprintf("the %d sequence not found address",netpack.M_MsgBody.MLAsktype)).Error())
 		result <- tSendResult

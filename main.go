@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bufio"
-	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -15,7 +13,6 @@ import (
 	pb "midmsg/proto"
 	"midmsg/utils"
 	"net"
-	"os"
 )
 
 var (
@@ -49,54 +46,4 @@ func main()  {
 	if err = rpcServer.Serve(listener); err != nil {
 		log.Fatal("failed serve at: " + Host + ":" + Port)
 	}
-}
-
-func test(){
-	//启动多线程处理
-	body := getbody()
-	t := &handle.MsgHandle{}
-
-	go func() {
-		for i:=0; i < 10000 ; i++ {
-			fmt.Println(i)
-			tbody := &pb.NetReqInfo{
-				M_Body:body,
-			}
-			rsp,err := t.Sync(context.TODO(),tbody)
-			if err != nil {
-				log.Error(err.Error())
-			}
-			log.Info(rsp)
-			//handleBody := handle.HandleBody{
-			//	M_Body:body,
-			//}
-			//handle.JobQueue <- handleBody
-		}
-
-		//for {
-		//	select {
-		//	case _ = <-JobDone:
-		//		fmt.Println("Done Job")
-		//	}
-		//}
-	}()
-
-
-}
-func getbody()[]byte{
-	fileName := "./2.txt"
-	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
-	if err != nil {
-		log.Error(err.Error())
-		return nil
-	}
-	defer file.Close()
-
-	buf := bufio.NewReader(file)
-	bodyByte := make([]byte,110)
-	_,err = buf.Read(bodyByte)
-	if err != nil {
-		return nil
-	}
-	return bodyByte
 }
