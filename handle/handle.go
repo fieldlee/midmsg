@@ -149,12 +149,18 @@ func (m *MsgHandle)Register(ctx context.Context, in *pb.RegisterInfo)(*pb.Regist
 		},errors.New(fmt.Sprintf("the %s function had registered",in.Sequence))
 	}
 	/////保存funcid
-	if _,err := SqlClient.GetFunc(in.Sequence);err != nil && err != sql.ErrNoRows {
+	if id,err := SqlClient.GetFunc(in.Sequence);err != nil && err != sql.ErrNoRows {
 		return nil,err
 	}else{
-		err = SqlClient.InsertFunc(in.Sequence)
-		if err != nil{
-			return nil,err
+		if id == "" {
+			err = SqlClient.InsertFunc(in.Sequence)
+			if err != nil{
+				return nil,err
+			}
+		}else{
+			return &pb.RegisterReturnInfo{
+				Success:true,
+			},errors.New(fmt.Sprintf("the %s function had registered",in.Sequence))
 		}
 	}
 
