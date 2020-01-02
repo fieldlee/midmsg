@@ -8,24 +8,4 @@ dbport : 3308
 dbuser : root
 dbpassword : 123456
 dbname : midmsg
-services:
-  10001:
-    service: test.service
-    point: Test.Service
-    address : 127.0.0.1
-    port : 8989
-  10002:
-    service: test.service2
-    point: Test.Service2
-    address: 127.0.0.1
-    port: 8989
 
-subscribe:
-  test.service:
-      subaddrs:
-       - 127.0.0.1:8989
-       - 127.0.0.1:8888
-  test.service2:
-      subaddrs:
-        - 192.168.1.31:8989
-        - 192.168.1.100:8989
