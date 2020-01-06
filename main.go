@@ -28,7 +28,7 @@ func init()  {
 
 func main()  {
 
-	log.SetLogLevel(logrus.TraceLevel)
+	log.SetLogLevel(logrus.DebugLevel)
 	log.SetLogFormatter(&logrus.TextFormatter{DisableColors:true})
 
 	d := handle.NewDispatcher(utils.MaxWorker,handle.JobDone)
