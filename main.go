@@ -34,7 +34,10 @@ func main()  {
 	d := handle.NewDispatcher(utils.MaxWorker,handle.JobDone)
 	d.Run()
 	////////启动监听sync pool里的数据，并200秒发送一次
-	go call.TimerCallPool()
+	go func() {
+		log.Info("start schedule handle ....")
+		call.TimerCallPool()
+	}()
 
 	listener, err := net.Listen("tcp", Host+":"+Port)
 	if err != nil {
