@@ -55,6 +55,7 @@ func (m *MsgHandle)Sync(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo,
 	out := make(chan *pb.NetRspInfo)
 	//// 发送body到队列
 	handleBody := HandleBody{
+		Service:in.Service,
 		ClientIp:ipaddr,
 		MBody:in.M_Body,
 		Type: model.CALL_CLIENT_SYNC,
@@ -92,6 +93,7 @@ func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo
 	out := make(chan *pb.NetRspInfo)
 	//// 发送body到队列
 	handleBody := HandleBody{
+		Service:in.Service,
 		ClientIp:ipaddr,
 		MBody:in.M_Body,
 		Type: model.CALL_CLIENT_ASYNC,
