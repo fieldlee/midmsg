@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/pborman/uuid"
 	"midmsg/call"
 	"midmsg/log"
 	"midmsg/model"
@@ -93,6 +92,7 @@ func (m *MsgHandle)Async(ctx context.Context, in *pb.NetReqInfo) (*pb.NetRspInfo
 	out := make(chan *pb.NetRspInfo)
 	//// 发送body到队列
 	handleBody := HandleBody{
+		Sequence:in.Uuid,
 		Service:in.Service,
 		ClientIp:ipaddr,
 		MBody:in.M_Body,
@@ -484,7 +484,7 @@ func CheckAndSend(key uint32,netpack *pb.Net_Pack,suuid string,syncType model.CA
 	timeout :=  time.Second * time.Duration(netpack.M_MsgBody.MLExpireTime)
 
 	sendInfo := model.CallInfo{
-		Sequence:uuid.New(),
+		Sequence:suuid,
 		ClientIP:clientIP,
 		Address:address,
 		Port:port,

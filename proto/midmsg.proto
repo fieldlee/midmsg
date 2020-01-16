@@ -13,7 +13,6 @@ service MidService {
 
 service ClientService{
     rpc Call(CallReqInfo)            returns (CallRspInfo) {};
-    rpc AsyncCall(CallReqInfo)       returns (CallRspInfo) {};
     rpc AsyncAnswer(CallReqInfo)     returns (CallRspInfo) {};
 }
 

@@ -41,7 +41,7 @@ func AsyncCallClient(callinfo model.CallInfo)(*pb.CallRspInfo,error){
 	///保持异步数据到map中
 	StoreAsyncAnswer(callinfo.Sequence,callinfo)
 
-	r, err := c.AsyncCall(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence,Service:callinfo.Service,Clientip:callinfo.ClientIP})
+	r, err := c.Call(ctx,&pb.CallReqInfo{M_Body:callinfo.MsgBody,Uuid:callinfo.Sequence,Service:callinfo.Service,Clientip:callinfo.ClientIP})
 
 	//////////////////////异步处理 ， 调用客户端的接口，异步发送
 	if err != nil {
