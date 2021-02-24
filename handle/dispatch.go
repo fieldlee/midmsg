@@ -28,7 +28,9 @@ type Worker struct {
 	JobDone     chan struct{}
 	quit    	chan bool
 }
+
 // A buffered channel that we can send work requests on.
+
 var (
 	JobQueue = make(chan HandleBody, utils.MaxQueue)
  	JobDone = make(chan struct{}, utils.MaxWorker)
